@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { Application, Graphics } from 'pixi.js'
+import { Application, Graphics, Sprite, Texture, Rectangle } from 'pixi.js'
 import { SpriteAgent } from './SpriteAgent.js'
 
-// Vite resolves these at build time → hashed URLs in dist
 import soldierIdle from '../../assets/sprites/Soldier/Soldier/Soldier-Idle.png'
 import soldierWalk from '../../assets/sprites/Soldier/Soldier/Soldier-Walk.png'
 import soldierAttack01 from '../../assets/sprites/Soldier/Soldier/Soldier-Attack01.png'
@@ -11,47 +10,63 @@ import soldierHurt from '../../assets/sprites/Soldier/Soldier/Soldier-Hurt.png'
 import orcIdle from '../../assets/sprites/Orc/Orc/Orc-Idle.png'
 import orcWalk from '../../assets/sprites/Orc/Orc/Orc-Walk.png'
 import orcDeath from '../../assets/sprites/Orc/Orc/Orc-Death.png'
+import tilesetSrc from '/assets/tileset.png'
 
-const TILE = 32
-const COLS = 20
-const ROWS = 14
+// Tileset config (16x16 tiles, 3 tiles horizontal)
+const TILE_SRC_SIZE = 16
+const TILE_SCALE = 3           // render each tile at 48x48px
+const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE
 
-function drawDungeon(app) {
-  const bg = new Graphics()
+// Tile indices in sprite sheet (x offset in source px)
+const TILE_DIRT       = 0   // x:0
+const TILE_DIRT_GRASS = 16  // x:16
+const TILE_GRASS      = 32  // x:32
 
-  // Floor
-  bg.rect(0, 0, app.screen.width, app.screen.height).fill({ color: 0x0d1a0d })
+// Ground layout: how many rows from bottom
+const GROUND_ROWS = 5  // total ground rows
+// Row 0 from bottom = pure grass top, row 1 = dirt-grass, rows 2+ = dirt
 
-  // Tile grid — subtle darker squares for dungeon floor tiles
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const x = col * TILE
-      const y = row * TILE
-      const shade = (col + row) % 2 === 0 ? 0x0f1f0f : 0x0a150a
-      bg.rect(x + 1, y + 1, TILE - 2, TILE - 2).fill({ color: shade })
+function buildTilemap(app, tilesetTexture) {
+  const screenW = app.screen.width
+  const screenH = app.screen.height
+  const cols = Math.ceil(screenW / TILE_SIZE) + 1
+
+  // Pre-slice tile textures
+  const texDirt      = new Texture({ source: tilesetTexture.source, frame: new Rectangle(TILE_DIRT,       0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
+  const texDirtGrass = new Texture({ source: tilesetTexture.source, frame: new Rectangle(TILE_DIRT_GRASS, 0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
+  const texGrass     = new Texture({ source: tilesetTexture.source, frame: new Rectangle(TILE_GRASS,      0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
+
+  const tilemapContainer = new Graphics()
+
+  // Ground top Y (where grass row starts)
+  const groundY = screenH - GROUND_ROWS * TILE_SIZE
+
+  for (let row = 0; row < GROUND_ROWS; row++) {
+    const y = groundY + row * TILE_SIZE
+    for (let col = 0; col < cols; col++) {
+      const x = col * TILE_SIZE
+      let tex
+      if (row === 0) tex = texGrass
+      else if (row === 1) tex = texDirtGrass
+      else tex = texDirt
+
+      const spr = new Sprite(tex)
+      spr.x = x
+      spr.y = y
+      spr.scale.set(TILE_SCALE)
+      // disable pixi texture smoothing for pixel art
+      spr.texture.source.scaleMode = 'nearest'
+      app.stage.addChild(spr)
     }
   }
 
-  // Border walls
-  bg.rect(0, 0, app.screen.width, 4).fill({ color: 0x1a2e1a })
-  bg.rect(0, app.screen.height - 4, app.screen.width, 4).fill({ color: 0x1a2e1a })
-  bg.rect(0, 0, 4, app.screen.height).fill({ color: 0x1a2e1a })
-  bg.rect(app.screen.width - 4, 0, 4, app.screen.height).fill({ color: 0x1a2e1a })
+  return { groundY, tilemapContainer }
+}
 
-  // Torches (orange glow spots)
-  const torchPositions = [
-    [TILE * 2, TILE * 2],
-    [TILE * 17, TILE * 2],
-    [TILE * 2, TILE * 11],
-    [TILE * 17, TILE * 11],
-  ]
-  for (const [tx, ty] of torchPositions) {
-    bg.circle(tx, ty, 24).fill({ color: 0x1a0800, alpha: 0.9 })
-    bg.circle(tx, ty, 14).fill({ color: 0x3a1800, alpha: 0.8 })
-    bg.circle(tx, ty, 6).fill({ color: 0xf59e0b, alpha: 0.9 })
-  }
-
-  app.stage.addChild(bg)
+function drawSky(app) {
+  const sky = new Graphics()
+  sky.rect(0, 0, app.screen.width, app.screen.height).fill({ color: 0x4d9be6 })
+  app.stage.addChildAt(sky, 0)
 }
 
 export default function PixiApp({ className = '' }) {
@@ -64,31 +79,40 @@ export default function PixiApp({ className = '' }) {
 
     async function init() {
       if (!canvasRef.current) return
-      // Wait one frame so the canvas has real dimensions
       await new Promise(r => requestAnimationFrame(r))
       if (cancelled) return
+
       const w = canvasRef.current.offsetWidth || 640
       const h = canvasRef.current.offsetHeight || 448
+
       const app = new Application()
       await app.init({
         canvas: canvasRef.current,
         width: w,
         height: h,
-        background: 0x0a0a0f,
+        background: 0x4d9be6,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
       })
 
-      if (cancelled) {
-        app.destroy()
-        return
-      }
-
+      if (cancelled) { app.destroy(); return }
       appRef.current = app
-      drawDungeon(app)
 
-      // Loodee — Soldier sprite, center of dungeon
+      // Sky background
+      drawSky(app)
+
+      // Load tileset
+      const tilesetTexture = await Texture.fromURL(tilesetSrc)
+      tilesetTexture.source.scaleMode = 'nearest'
+
+      // Build tilemap, get groundY
+      const { groundY } = buildTilemap(app, tilesetTexture)
+
+      // Ground line Y for character feet
+      const floorY = groundY - 4
+
+      // Loodee — Soldier, stands on ground
       const loodee = new SpriteAgent({
         name: 'Loodee',
         spritePaths: {
@@ -102,11 +126,13 @@ export default function PixiApp({ className = '' }) {
         animationSpeed: 0.13,
       })
       await loodee.load()
-      loodee.setPosition(app.screen.width / 2, app.screen.height / 2 + 60)
+      // Anchor feet to ground
+      const loodeeX = app.screen.width * 0.25
+      loodee.setPosition(loodeeX, floorY - loodee.container.height / 2 + 10)
       app.stage.addChild(loodee.container)
       agentsRef.current.push(loodee)
 
-      // Orc — idle enemy in corner
+      // Orc — further right, also on ground
       const orc = new SpriteAgent({
         name: 'Orc',
         spritePaths: {
@@ -118,15 +144,28 @@ export default function PixiApp({ className = '' }) {
         animationSpeed: 0.1,
       })
       await orc.load()
-      orc.setPosition(app.screen.width * 0.75, app.screen.height * 0.35)
+      const orcX = app.screen.width * 0.65
+      orc.setPosition(orcX, floorY - orc.container.height / 2 + 10)
       app.stage.addChild(orc.container)
       agentsRef.current.push(orc)
 
-      // Breathing ambient torch flicker via ticker
-      let tick = 0
+      // Simple walk cycle for Loodee
+      let loodeeDir = 1
+      let loodeePos = loodeeX
+      const walkSpeed = 0.6
+      const walkBound = app.screen.width * 0.45
+
+      loodee.playAnim('Walk')
+
       app.ticker.add(() => {
-        tick += 0.04
-        // subtle brightness oscillation could go here
+        loodeePos += walkSpeed * loodeeDir
+        if (loodeePos > walkBound || loodeePos < app.screen.width * 0.08) {
+          loodeeDir *= -1
+          loodee.container.scale.x = loodeeDir < 0
+            ? -Math.abs(loodee.container.scale.x)
+            : Math.abs(loodee.container.scale.x)
+        }
+        loodee.container.x = loodeePos
       })
     }
 
@@ -134,7 +173,7 @@ export default function PixiApp({ className = '' }) {
 
     return () => {
       cancelled = true
-      agentsRef.current.forEach((a) => a.destroy())
+      agentsRef.current.forEach(a => a.destroy())
       agentsRef.current = []
       if (appRef.current) {
         appRef.current.destroy(false)
