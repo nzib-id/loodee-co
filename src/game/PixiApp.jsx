@@ -15,7 +15,7 @@ import orcDeath from '../../assets/sprites/Orc/Orc/Orc-Death.png'
 const TILE_SRC_SIZE = 16
 const TILE_SCALE = 3
 const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE  // 48px per tile
-const GROUND_ROWS = 5
+const GROUND_ROWS = 11  // ~50% of screen height (11 * 48px = 528px)
 
 async function buildTilemap(app) {
   const screenW = app.screen.width
@@ -89,7 +89,7 @@ export default function PixiApp({ className = '' }) {
       const groundY = await buildTilemap(app)
 
       // floorY = where character feet should touch
-      const floorY = groundY + 10  // slight sink into grass
+      const floorY = groundY + 20  // sink feet into grass row
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
