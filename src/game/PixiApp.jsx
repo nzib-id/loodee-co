@@ -99,9 +99,9 @@ export default function PixiApp({ className = '' }) {
       const mtScale = app.screen.width / mountainTexture.width
       mountainSprite.scale.set(mtScale)
       mountainSprite.x = 0
-      // Snap mountain bottom to top of ground tiles
+      // Snap mountain bottom — overlap with ground a bit
       const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
-      mountainSprite.y = groundTopY - mountainTexture.height * mtScale
+      mountainSprite.y = groundTopY - mountainTexture.height * mtScale + 80
       app.stage.addChild(mountainSprite)
 
       // Build tilemap: bgLayer (grass) added behind sprites, fgLayer (dirt) added after
