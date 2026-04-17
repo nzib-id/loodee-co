@@ -128,7 +128,7 @@ export default function PixiApp({ className = '' }) {
         treeSprite.scale.set(TREE_SCALE)
         treeSprite.anchor.set(0.5, 1)
         treeSprite.x = app.screen.width * x
-        treeSprite.y = treeGroundY + 8
+        treeSprite.y = treeGroundY + 48
         app.stage.addChild(treeSprite)
       }
 
