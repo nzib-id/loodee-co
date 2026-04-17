@@ -22,7 +22,7 @@ async function buildTilemap(app) {
   const screenH = app.screen.height
   const cols = Math.ceil(screenW / TILE_SIZE) + 2
 
-  const tilesetTexture = await Assets.load('/assets/tileset.png')
+  const tilesetTexture = await Assets.load('/assets/tileset-v2.png')
   tilesetTexture.source.scaleMode = 'nearest'
 
   // Slice tiles from sprite sheet
