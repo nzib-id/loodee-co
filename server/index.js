@@ -84,29 +84,42 @@ function pollOpenClaw() {
     const raw = readFileSync(SESSIONS_FILE, 'utf8')
     const sessions = JSON.parse(raw)
     const now = Date.now()
-    const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000 // active if updated within 5 minutes
+    const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000 // active if updated within 10 minutes
 
-    let changed = false
-
+    // Aggregate: per agent, take the most recent updatedAt across all matching sessions
+    const latestUpdated = new Map()
     for (const [key, session] of Object.entries(sessions)) {
       const id = mapSessionToAgent(key)
       if (!id) continue
-
-      const msSinceUpdate = now - (session.updatedAt ?? 0)
-      const isActive = msSinceUpdate < ACTIVE_THRESHOLD_MS
-      const newStatus = isActive ? 'active' : 'idle'
-
-      const current = agentState.get(id)
-      if (current && current.status !== newStatus) {
-        agentState.set(id, { ...current, status: newStatus, load: isActive ? 60 : 0 })
-        broadcast({ type: 'agent_status', agentId: id, status: newStatus, load: isActive ? 60 : 0 })
-        changed = true
+      const updated = session.updatedAt ?? 0
+      if (!latestUpdated.has(id) || updated > latestUpdated.get(id)) {
+        latestUpdated.set(id, updated)
       }
     }
 
-    if (changed) {
-      console.log('[poll] Agent states updated')
+    let changed = false
+    for (const [id, updatedAt] of latestUpdated.entries()) {
+      const msSinceUpdate = now - updatedAt
+      const isActive = msSinceUpdate < ACTIVE_THRESHOLD_MS
+      const newStatus = isActive ? 'active' : 'idle'
+      const newLoad = isActive ? Math.round(60 - (msSinceUpdate / ACTIVE_THRESHOLD_MS) * 60) : 0
+
+      const current = agentState.get(id)
+      if (current && current.status !== newStatus) {
+        agentState.set(id, { ...current, status: newStatus, load: newLoad })
+        broadcast({ type: 'agent_status', agentId: id, status: newStatus, load: newLoad })
+        changed = true
+        console.log(`[poll] ${id}: ${newStatus} (${Math.round(msSinceUpdate / 1000)}s ago)`)
+      }
     }
+
+    // Always send current Loodee state on every poll so frontend stays in sync
+    const loodeeUpdated = latestUpdated.get('loodee') ?? 0
+    const loodeeMsSince = now - loodeeUpdated
+    const loodeeActive = loodeeMsSince < ACTIVE_THRESHOLD_MS
+    const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
+    broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
+
   } catch (err) {
     console.error('[poll] Error reading sessions file:', err.message)
   }
