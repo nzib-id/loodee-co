@@ -118,7 +118,7 @@ export default function PixiApp({ className = '' }) {
         { x: 0.72, treeIdx: 0 },
         { x: 0.88, treeIdx: 1 },
       ]
-      const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
+      const treeGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE
       for (const { x, treeIdx } of treePositions) {
         const treeTex = new Texture({
           source: treesTexture.source,
@@ -128,7 +128,7 @@ export default function PixiApp({ className = '' }) {
         treeSprite.scale.set(TREE_SCALE)
         treeSprite.anchor.set(0.5, 1)
         treeSprite.x = app.screen.width * x
-        treeSprite.y = groundTopY + 8
+        treeSprite.y = treeGroundY + 8
         app.stage.addChild(treeSprite)
       }
 
