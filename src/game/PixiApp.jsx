@@ -75,8 +75,9 @@ export default function PixiApp({ className = '' }) {
       // Preload custom fonts so Pixi can use them in canvas
       await document.fonts.load('14px heading-font')
 
-      const w = canvasRef.current.offsetWidth || 640
-      const h = canvasRef.current.offsetHeight || 448
+      const isMobile = window.innerWidth < 768
+      const w = isMobile ? window.innerWidth : (canvasRef.current.offsetWidth || 640)
+      const h = isMobile ? Math.round(window.innerWidth * 0.5625) : (canvasRef.current.offsetHeight || 448)
 
       const app = new Application()
       await app.init({
