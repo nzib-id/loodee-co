@@ -75,8 +75,11 @@ export default function PixiApp({ className = '' }) {
       // Preload custom fonts so Pixi can use them in canvas
       await document.fonts.load('14px heading-font')
 
-      const w = canvasRef.current.offsetWidth || 640
-      const h = canvasRef.current.offsetHeight || 448
+      // Extra frame so browser reflow is done (critical after orientation change)
+      await new Promise(r => requestAnimationFrame(r))
+      if (!canvasRef.current || cancelled) return
+      const w = canvasRef.current.offsetWidth || window.innerWidth || 640
+      const h = canvasRef.current.offsetHeight || window.innerHeight || 448
 
       const app = new Application()
       await app.init({
@@ -288,20 +291,19 @@ export default function PixiApp({ className = '' }) {
     }
   }, [])
 
-  // Re-init PixiJS on orientation change (mobile landscape/portrait swap)
+  // Re-init PixiJS on orientation change (mobile only)
   useEffect(() => {
     const handleOrientationChange = () => {
-      // Wait for browser to finish rotating before re-reading dimensions
       setTimeout(() => {
+        // Always reinit so canvas gets correct dimensions after rotate
         agentsRef.current.forEach(a => a.destroy())
         agentsRef.current = []
         if (appRef.current) {
           appRef.current.destroy(false)
           appRef.current = null
         }
-        // Force React to re-run init by toggling a key — we do it via a custom event
         window.dispatchEvent(new Event('pixi-reinit'))
-      }, 300)
+      }, 500) // extra delay so browser fully reflows
     }
     window.addEventListener('orientationchange', handleOrientationChange)
     return () => window.removeEventListener('orientationchange', handleOrientationChange)
