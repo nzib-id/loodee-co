@@ -122,7 +122,7 @@ export default function App() {
         }}
       >
         <div className="flex-1 min-h-0 overflow-hidden"><AgentPanel /></div>
-        <div className="h-44 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
+        <div className="h-28 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
           <LogPanel />
         </div>
       </div>
