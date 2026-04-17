@@ -89,7 +89,7 @@ export default function PixiApp({ className = '' }) {
       const groundY = await buildTilemap(app)
 
       // floorY = top of grass row = where feet should be
-      const floorY = groundY + TILE_SIZE * 0.5  // mid grass row so feet look grounded
+      const floorY = groundY + 8  // slight sink into grass top
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
