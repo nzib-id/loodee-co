@@ -30,7 +30,9 @@ async function buildTilemap(app) {
   const texDirtGrass = new Texture({ source: tilesetTexture.source, frame: new Rectangle(16, 0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
   const texDirt      = new Texture({ source: tilesetTexture.source, frame: new Rectangle(0,  0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
 
-  const tilemapContainer = new Container()
+  // Two containers: bgLayer (grass row, behind sprites) + fgLayer (dirt rows, in front)
+  const bgLayer = new Container()
+  const fgLayer = new Container()
   const groundY = screenH - GROUND_ROWS * TILE_SIZE
 
   for (let row = 0; row < GROUND_ROWS; row++) {
@@ -47,12 +49,16 @@ async function buildTilemap(app) {
       spr.y = y
       spr.width = TILE_SIZE
       spr.height = TILE_SIZE
-      tilemapContainer.addChild(spr)
+
+      // Grass row goes behind sprites, dirt rows go in front
+      if (row === 0) bgLayer.addChild(spr)
+      else fgLayer.addChild(spr)
     }
   }
 
-  app.stage.addChild(tilemapContainer)
-  return groundY
+  // bgLayer added now (behind sprites), fgLayer returned to add after sprites
+  app.stage.addChild(bgLayer)
+  return { groundY, fgLayer }
 }
 
 export default function PixiApp({ className = '' }) {
@@ -85,11 +91,11 @@ export default function PixiApp({ className = '' }) {
       if (cancelled) { app.destroy(); return }
       appRef.current = app
 
-      // Build tilemap, returns groundY (top of grass row)
-      const groundY = await buildTilemap(app)
+      // Build tilemap: bgLayer (grass) added behind sprites, fgLayer (dirt) added after
+      const { groundY, fgLayer } = await buildTilemap(app)
 
       // floorY = where character feet should touch
-      const floorY = groundY + 45  // measured from screenshot: ~25px gap to close
+      const floorY = groundY + 45
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
@@ -126,6 +132,9 @@ export default function PixiApp({ className = '' }) {
       orc.setPosition(app.screen.width * 0.65, floorY)
       app.stage.addChild(orc.container)
       agentsRef.current.push(orc)
+
+      // Dirt layer on top of sprites — gives depth effect (sprites behind dirt)
+      app.stage.addChild(fgLayer)
 
       // Walk cycle for Loodee
       let dir = 1
