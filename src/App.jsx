@@ -46,8 +46,10 @@ export default function App() {
     }
   }, [])
 
-  // Mobile landscape: canvas fullscreen, panel slide-up
-  if (isLandscape) {
+
+  // Mobile portrait: canvas fills screen, panel hidden by default
+  const isMobile = window.innerWidth < 1024
+  if (isMobile) {
     return (
       <div className="relative w-screen h-screen overflow-hidden" style={{ background: '#292929' }}>
         {/* Canvas fullscreen */}
@@ -57,6 +59,10 @@ export default function App() {
               style={{ background: '#292929', border: '2px solid #ffe500', boxShadow: '3px 3px 0 rgba(0,0,0,1)', color: '#ffe500' }}>
               LOODEE CO. HQ
             </div>
+            <LiveClock />
+          </div>
+          <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
+            <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>MAP: DUNGEON_01 — SECTOR 4</span>
           </div>
           <PixiApp className="w-full h-full" />
         </div>
@@ -78,17 +84,17 @@ export default function App() {
 
         {/* Slide-up panel */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 flex flex-row overflow-hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 flex flex-col overflow-hidden"
           style={{
-            height: '65vh',
+            height: isLandscape ? '65vh' : '70vh',
             background: '#292929',
             borderTop: '2px solid rgba(255,229,0,0.3)',
             transform: panelOpen ? 'translateY(0)' : 'translateY(100%)',
             transition: 'transform 0.3s ease-in-out',
           }}
         >
-          <div className="flex-1 min-w-0 overflow-hidden"><AgentPanel /></div>
-          <div className="w-64 shrink-0 overflow-hidden" style={{ borderLeft: '2px solid rgba(255,255,255,0.1)' }}><LogPanel /></div>
+          <div className="flex-1 min-h-0 overflow-hidden"><AgentPanel /></div>
+          <div className="h-44 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}><LogPanel /></div>
         </div>
       </div>
     )
@@ -96,8 +102,8 @@ export default function App() {
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
-      {/* Canvas — fixed height on mobile portrait, flex-1 on desktop */}
-      <div className="relative h-[280px] lg:flex-1 min-w-0 overflow-hidden scanline-overlay">
+      {/* Canvas — desktop only */}
+      <div className="relative lg:flex-1 min-w-0 overflow-hidden scanline-overlay">
         {/* Corner HUD */}
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
           <div
