@@ -154,3 +154,25 @@ httpServer.listen(PORT, () => {
   console.log(`   Health: http://localhost:${PORT}/health`)
   console.log(`   Sessions file: ${SESSIONS_FILE}`)
 })
+
+// Graceful shutdown — release port immediately on exit
+function shutdown() {
+  console.log('[server] Shutting down...')
+  httpServer.close(() => process.exit(0))
+  setTimeout(() => process.exit(1), 3000)
+}
+process.on('SIGTERM', shutdown)
+process.on('SIGINT', shutdown)
+
+// Handle EADDRINUSE gracefully
+httpServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[server] Port ${PORT} in use, retrying in 2s...`)
+    setTimeout(() => {
+      httpServer.close()
+      httpServer.listen(PORT)
+    }, 2000)
+  } else {
+    throw err
+  }
+})
