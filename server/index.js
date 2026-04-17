@@ -1,12 +1,14 @@
 import express from 'express'
 import { createServer } from 'http'
 import { WebSocketServer } from 'ws'
-import fetch from 'node-fetch'
 import cors from 'cors'
+import { readFileSync } from 'fs'
+import { homedir } from 'os'
+import path from 'path'
 
 const PORT = 3001
-const OPENCLAW_API = 'http://127.0.0.1:18789'
-const POLL_INTERVAL = 5000 // poll OpenClaw every 5s
+const SESSIONS_FILE = path.join(homedir(), '.openclaw/agents/main/sessions/sessions.json')
+const POLL_INTERVAL = 5000 // poll sessions file every 5s
 
 const app = express()
 app.use(cors())
@@ -76,58 +78,43 @@ const agentState = new Map([
   ['creativebot', { id: 'creativebot', status: 'idle',   load: 0 }],
 ])
 
-// Poll OpenClaw API for session/agent status
-async function pollOpenClaw() {
+// Read OpenClaw sessions.json and derive agent states
+function pollOpenClaw() {
   try {
-    const res = await fetch(`${OPENCLAW_API}/api/sessions`, {
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(3000),
-    })
-
-    if (!res.ok) return
-
-    const data = await res.json()
-    const sessions = data.sessions ?? data ?? []
+    const raw = readFileSync(SESSIONS_FILE, 'utf8')
+    const sessions = JSON.parse(raw)
+    const now = Date.now()
+    const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000 // active if updated within 5 minutes
 
     let changed = false
 
-    for (const session of sessions) {
-      // Map session keys to agent IDs
-      const id = mapSessionToAgent(session.key ?? session.id ?? '')
+    for (const [key, session] of Object.entries(sessions)) {
+      const id = mapSessionToAgent(key)
       if (!id) continue
 
-      const isActive = session.status === 'running' || session.status === 'active'
+      const msSinceUpdate = now - (session.updatedAt ?? 0)
+      const isActive = msSinceUpdate < ACTIVE_THRESHOLD_MS
       const newStatus = isActive ? 'active' : 'idle'
-      const newLoad = isActive ? Math.floor(Math.random() * 40 + 40) : 0 // placeholder load
 
       const current = agentState.get(id)
-      if (current && (current.status !== newStatus || current.load !== newLoad)) {
-        agentState.set(id, { id, status: newStatus, load: newLoad })
-        broadcast({ type: 'agent_status', agentId: id, status: newStatus, load: newLoad })
+      if (current && current.status !== newStatus) {
+        agentState.set(id, { ...current, status: newStatus, load: isActive ? 60 : 0 })
+        broadcast({ type: 'agent_status', agentId: id, status: newStatus, load: isActive ? 60 : 0 })
         changed = true
       }
-    }
-
-    // Loodee (main agent) is always active if server is running
-    const loodee = agentState.get('loodee')
-    if (loodee?.status !== 'active') {
-      agentState.set('loodee', { id: 'loodee', status: 'active', load: 65 })
-      broadcast({ type: 'agent_status', agentId: 'loodee', status: 'active', load: 65 })
     }
 
     if (changed) {
       console.log('[poll] Agent states updated')
     }
   } catch (err) {
-    // OpenClaw not reachable — keep last known state
-    if (err.name !== 'AbortError' && err.code !== 'ECONNREFUSED') {
-      console.error('[poll] Error:', err.message)
-    }
+    console.error('[poll] Error reading sessions file:', err.message)
   }
 }
 
 function mapSessionToAgent(sessionKey) {
-  if (sessionKey.includes('main') || sessionKey.includes('loodee')) return 'loodee'
+  // agent:main:telegram:direct:1927609058 → loodee (main session)
+  if (sessionKey.startsWith('agent:main')) return 'loodee'
   if (sessionKey.includes('code')) return 'codebot'
   if (sessionKey.includes('research')) return 'researchbot'
   if (sessionKey.includes('creative')) return 'creativebot'
@@ -152,5 +139,5 @@ setInterval(() => {
 httpServer.listen(PORT, () => {
   console.log(`🏠 Loodee Co. backend running on ws://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/health`)
-  console.log(`   OpenClaw API: ${OPENCLAW_API}`)
+  console.log(`   Sessions file: ${SESSIONS_FILE}`)
 })
