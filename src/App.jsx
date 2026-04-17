@@ -76,7 +76,7 @@ export default function App() {
 
   // ─── Mobile layout (portrait & landscape) ─────────────────────────────────
   return (
-    <div className="relative w-screen overflow-hidden" style={{ background: '#292929', height: '100dvh' }}>
+    <div className="relative w-screen h-screen overflow-hidden" style={{ background: '#292929' }}>
       {/* Canvas — always fullscreen on mobile */}
       <div className="absolute inset-0 scanline-overlay">
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">

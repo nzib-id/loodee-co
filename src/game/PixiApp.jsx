@@ -17,7 +17,7 @@ import orcHurt from '../../assets/sprites/Orc/Orc/Orc-Hurt.png'
 const TILE_SRC_SIZE = 16
 const TILE_SCALE = 3
 const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE  // 48px per tile
-// Dynamic per orientation — set in init()
+const GROUND_ROWS = 7
 
 async function buildTilemap(app) {
   const screenW = app.screen.width
@@ -75,15 +75,11 @@ export default function PixiApp({ className = '' }) {
       // Preload custom fonts so Pixi can use them in canvas
       await document.fonts.load('14px heading-font')
 
-      // Wait for browser reflow — use multiple frames + parent size fallback
-      await new Promise(r => requestAnimationFrame(r))
+      // Extra frame so browser reflow is done (critical after orientation change)
       await new Promise(r => requestAnimationFrame(r))
       if (!canvasRef.current || cancelled) return
-      const parent = canvasRef.current.parentElement
-      const w = parent?.offsetWidth || canvasRef.current.offsetWidth || window.innerWidth || 640
-      const h = parent?.offsetHeight || canvasRef.current.offsetHeight || window.innerHeight || 448
-      const isLandscape = w > h
-      const GROUND_ROWS = isLandscape ? 5 : 9
+      const w = canvasRef.current.offsetWidth || window.innerWidth || 640
+      const h = canvasRef.current.offsetHeight || window.innerHeight || 448
 
       const app = new Application()
       await app.init({
