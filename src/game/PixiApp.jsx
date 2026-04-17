@@ -112,23 +112,17 @@ export default function PixiApp({ className = '' }) {
       bush2Tex.source.scaleMode = 'nearest'
       bush3Tex.source.scaleMode = 'nearest'
       const BUSH_SCALE = 3
-      const bushPositions = [
-        { x: 0.08, tex: bush2Tex },
-        { x: 0.19, tex: bush1Tex },
-        { x: 0.25, tex: bush3Tex },
-        { x: 0.38, tex: bush1Tex },
-        { x: 0.47, tex: bush2Tex },
-        { x: 0.60, tex: bush3Tex },
-        { x: 0.68, tex: bush1Tex },
-        { x: 0.78, tex: bush2Tex },
-        { x: 0.93, tex: bush3Tex },
-      ]
+      const bushTextures = [bush1Tex, bush2Tex, bush3Tex]
       const bushGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE + 48
-      for (const { x, tex } of bushPositions) {
+      // Fill full width with bushes, spacing ~40px, random pick from 3 types
+      const bushSpacing = 40
+      const bushCount = Math.ceil(app.screen.width / bushSpacing) + 1
+      for (let i = 0; i < bushCount; i++) {
+        const tex = bushTextures[i % bushTextures.length]
         const bushSprite = new Sprite(tex)
         bushSprite.scale.set(BUSH_SCALE)
         bushSprite.anchor.set(0.5, 1)
-        bushSprite.x = app.screen.width * x
+        bushSprite.x = i * bushSpacing
         bushSprite.y = bushGroundY
         app.stage.addChild(bushSprite)
       }
