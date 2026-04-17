@@ -2,8 +2,7 @@ import express from 'express'
 import { createServer } from 'http'
 import { WebSocketServer } from 'ws'
 import cors from 'cors'
-import { readFileSync, existsSync } from 'fs'
-import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
 import { homedir } from 'os'
 import path from 'path'
 
@@ -34,6 +33,16 @@ function broadcast(data) {
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', clients: clients.size, uptime: process.uptime() })
+})
+
+// Set agent status manually (used by orchestrator)
+app.post('/api/agent-status', (req, res) => {
+  const { agentId, status, load } = req.body
+  if (!agentId || !status) return res.status(400).json({ error: 'agentId and status required' })
+  agentState.set(agentId, { id: agentId, status, load: load ?? 0 })
+  broadcast({ type: 'agent_status', agentId, status, load: load ?? 0 })
+  console.log(`[api] ${agentId} set to ${status}`)
+  res.json({ ok: true })
 })
 
 // WebSocket connection handler
@@ -121,12 +130,8 @@ function pollOpenClaw() {
     const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
 
-    // CodeBot active only when a claude process is actually running
-    let codebotActive = false
-    try {
-      const out = execSync('pgrep -f "claude --permission-mode"', { timeout: 1000 }).toString().trim()
-      codebotActive = out.length > 0
-    } catch { codebotActive = false }
+    // CodeBot active only when explicitly set via /api/codebot-status
+    const codebotActive = agentState.get('codebot')?.status === 'active'
     broadcast({ type: 'agent_status', agentId: 'codebot', status: codebotActive ? 'active' : 'idle', load: codebotActive ? 55 : 0 })
 
     // ResearchBot & CreativeBot: use real session data if available, else idle
