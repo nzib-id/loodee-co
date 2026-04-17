@@ -17,7 +17,7 @@ import orcHurt from '../../assets/sprites/Orc/Orc/Orc-Hurt.png'
 const TILE_SRC_SIZE = 16
 const TILE_SCALE = 3
 const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE  // 48px per tile
-const GROUND_ROWS = 7
+const GROUND_ROWS = 11
 
 async function buildTilemap(app) {
   const screenW = app.screen.width
