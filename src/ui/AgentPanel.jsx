@@ -1,10 +1,10 @@
 import { useAgentStore } from '../store/agentStore.js'
 
 const STATUS_CONFIG = {
-  active: { dot: 'bg-green-400 shadow-[0_0_6px_#4ade80]', label: 'Active', pulse: true },
-  idle:   { dot: 'bg-amber-400',  label: 'Idle',   pulse: false },
-  busy:   { dot: 'bg-loodee',     label: 'Busy',   pulse: true },
-  offline:{ dot: 'bg-zinc-600',   label: 'Offline',pulse: false },
+  active:  { dot: '#4ade80', label: 'Active',  pulse: true },
+  idle:    { dot: '#ffe500', label: 'Idle',    pulse: false },
+  busy:    { dot: '#ffe500', label: 'Busy',    pulse: true },
+  offline: { dot: 'rgba(255,255,255,0.2)', label: 'Offline', pulse: false },
 }
 
 const ROLE_ICON = {
@@ -19,52 +19,73 @@ function AgentCard({ agent, selected, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-xl p-4 border transition-all duration-200 bg-dungeon-panel
-        ${selected
-          ? 'border-loodee shadow-[0_0_16px_rgba(124,106,247,0.2)]'
-          : 'border-dungeon-border hover:border-zinc-600'
-        }`}
-      style={{ borderTopColor: selected ? agent.color : undefined }}
+      className="w-full text-left p-4 transition-all duration-150"
+      style={{
+        background: selected ? 'rgba(255,229,0,0.06)' : '#292929',
+        border: selected ? '2px solid #ffe500' : '2px solid rgba(255,255,255,0.12)',
+        boxShadow: selected ? '3px 3px 0 rgba(0,0,0,1)' : 'none',
+        borderRadius: 0,
+      }}
     >
-      {/* Top accent */}
-      <div className="w-full h-0.5 -mt-4 mb-3 -mx-4 rounded-t-xl" style={{ background: agent.color, width: 'calc(100% + 2rem)' }} />
+      {/* Top color accent bar */}
+      <div
+        className="w-full h-0.5 mb-3"
+        style={{ background: agent.color }}
+      />
 
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0"
-          style={{ background: `${agent.color}22` }}
+          className="w-10 h-10 flex items-center justify-center text-xl shrink-0"
+          style={{
+            background: `${agent.color}22`,
+            border: `2px solid ${agent.color}44`,
+            borderRadius: 0,
+          }}
         >
           {ROLE_ICON[agent.role] ?? '?'}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-bold text-white text-sm truncate">{agent.name}</div>
-          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{agent.role}</div>
+          <div
+            className="font-heading text-sm truncate"
+            style={{ color: selected ? '#ffe500' : '#ffffff' }}
+          >
+            {agent.name}
+          </div>
+          <div className="text-[10px] tracking-widest mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {agent.role}
+          </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mt-3">
         <span
-          className={`inline-block w-2 h-2 rounded-full shrink-0 ${s.dot} ${s.pulse ? 'status-active' : ''}`}
+          className={`inline-block w-2 h-2 shrink-0 ${s.pulse ? 'status-active' : ''}`}
+          style={{ background: s.dot, borderRadius: 0 }}
         />
-        <span className="text-xs text-zinc-400">{s.label}</span>
+        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</span>
       </div>
 
       {/* Load bar */}
       <div className="mt-2">
-        <div className="flex justify-between text-[10px] text-zinc-600 mb-1">
+        <div className="flex justify-between text-[10px] mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
           <span>LOAD</span>
           <span>{agent.load}%</span>
         </div>
-        <div className="h-1 bg-dungeon-muted rounded-full overflow-hidden">
+        <div className="h-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
           <div
-            className="h-full rounded-full transition-all duration-1000"
+            className="h-full transition-all duration-1000"
             style={{ width: `${agent.load}%`, background: agent.color }}
           />
         </div>
       </div>
 
       <div
-        className="mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] text-zinc-500 bg-dungeon-muted"
+        className="mt-2 inline-block px-2 py-0.5 text-[10px] font-mono"
+        style={{
+          color: 'rgba(255,255,255,0.4)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 0,
+        }}
       >
         {agent.model}
       </div>
@@ -79,22 +100,48 @@ export default function AgentPanel() {
   const wsConnected = useAgentStore((s) => s.wsConnected)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ background: '#292929' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-dungeon-border shrink-0">
-        <h1 className="text-white font-bold tracking-widest text-sm">
-          LOODEE <span className="text-loodee">CO.</span>
-        </h1>
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ borderBottom: '2px solid rgba(255,255,255,0.12)' }}
+      >
+        <div className="flex items-center gap-3">
+          <img
+            src="/assets/logo/logo.svg"
+            alt="Loodee Co."
+            className="h-6 w-auto"
+          />
+          <span className="font-heading text-sm" style={{ color: '#ffe500' }}>
+            LOODEE CO.
+          </span>
+        </div>
+
         <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${wsConnected ? 'bg-green-400' : 'bg-zinc-600'}`} />
-          <span className="text-[10px] text-zinc-500">{wsConnected ? 'HQ LIVE' : 'HQ OFFLINE'}</span>
+          <span
+            className="w-2 h-2 status-active"
+            style={{
+              background: wsConnected ? '#ffe500' : 'rgba(255,255,255,0.2)',
+              borderRadius: 0,
+              display: 'inline-block',
+            }}
+          />
+          <span
+            className="text-[10px] tracking-widest font-heading"
+            style={{ color: wsConnected ? '#ffe500' : 'rgba(255,255,255,0.3)' }}
+          >
+            {wsConnected ? 'HQ LIVE' : 'OFFLINE'}
+          </span>
         </div>
       </div>
 
       {/* Agent cards */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-        <div className="text-[10px] text-zinc-600 uppercase tracking-widest px-1 mb-2">
-          Agents — {agents.filter(a => a.status === 'active').length} active
+        <div
+          className="text-[10px] tracking-widest px-1 mb-2 font-heading"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+        >
+          AGENTS — {agents.filter(a => a.status === 'active').length} ACTIVE
         </div>
         {agents.map((agent) => (
           <AgentCard

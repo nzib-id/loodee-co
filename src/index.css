@@ -2,13 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'heading-font';
+  src: url('/fonts/heading-font.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'body-font';
+  src: url('/fonts/body-font.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* Pixel art global — no blurring anywhere */
 canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -20,20 +35,20 @@ html, body, #root {
 }
 
 body {
-  background: #0a0a0f;
-  color: #e0e0e0;
-  font-family: 'Courier New', Courier, monospace;
+  background: #292929;
+  color: #ffffff;
+  font-family: 'body-font', 'Courier New', Courier, monospace;
 }
 
 ::-webkit-scrollbar {
   width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #111118;
+  background: #292929;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
-  border-radius: 4px;
+  background: rgba(255, 229, 0, 0.3);
+  border-radius: 0;
 }
 
 @keyframes pulse-dot {
@@ -52,7 +67,8 @@ body {
 
 .pixel-border {
   image-rendering: pixelated;
-  box-shadow: 0 0 0 1px #1e1e2e, 0 0 20px rgba(124, 106, 247, 0.08);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 1);
+  border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
 .scanline-overlay::after {
@@ -60,7 +76,31 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: rgba(124, 106, 247, 0.04);
+  background: rgba(255, 229, 0, 0.03);
   animation: scanline 4s linear infinite;
   pointer-events: none;
+}
+
+.pixel-avatar {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.font-heading {
+  font-family: 'heading-font', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.btn-brutal {
+  border: 2px solid #ffe500;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 1);
+  transition: background 0.1s, color 0.1s, box-shadow 0.1s, transform 0.1s;
+}
+
+.btn-brutal:hover {
+  background: #ffe500;
+  color: #292929;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
 }

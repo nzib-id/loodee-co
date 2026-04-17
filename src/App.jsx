@@ -18,7 +18,7 @@ function LiveClock() {
     return () => clearInterval(id)
   }, [])
   return (
-    <span id="hq-clock" className="text-xs text-zinc-600 tabular-nums" />
+    <span id="hq-clock" className="text-xs tabular-nums text-white/50" />
   )
 }
 
@@ -28,12 +28,20 @@ export default function App() {
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-dungeon-bg">
+    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
       {/* Left — Pixi.js game canvas */}
       <div className="relative flex-1 min-w-0 overflow-hidden scanline-overlay">
         {/* Corner HUD */}
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
-          <div className="px-2 py-1 bg-black/60 border border-dungeon-border rounded text-[10px] text-loodee tracking-widest font-mono">
+          <div
+            className="px-2 py-1 text-[10px] tracking-widest font-heading"
+            style={{
+              background: '#292929',
+              border: '2px solid #ffe500',
+              boxShadow: '3px 3px 0 rgba(0,0,0,1)',
+              color: '#ffe500',
+            }}
+          >
             LOODEE CO. HQ
           </div>
           <LiveClock />
@@ -41,7 +49,9 @@ export default function App() {
 
         {/* Coordinate display bottom-left */}
         <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-          <span className="text-[10px] text-zinc-700 font-mono">MAP: DUNGEON_01 — SECTOR 4</span>
+          <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            MAP: DUNGEON_01 — SECTOR 4
+          </span>
         </div>
 
         <PixiApp className="w-full h-full" />
@@ -49,7 +59,11 @@ export default function App() {
 
       {/* Right — UI panels */}
       <div
-        className="w-72 shrink-0 flex flex-col border-l border-dungeon-border bg-dungeon-panel overflow-hidden"
+        className="w-72 shrink-0 flex flex-col overflow-hidden"
+        style={{
+          background: '#292929',
+          borderLeft: '2px solid rgba(255,255,255,0.15)',
+        }}
       >
         {/* Agent list — takes upper 2/3 */}
         <div className="flex-1 min-h-0 overflow-hidden">
