@@ -17,8 +17,7 @@ import orcHurt from '../../assets/sprites/Orc/Orc/Orc-Hurt.png'
 const TILE_SRC_SIZE = 16
 const TILE_SCALE = 3
 const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE  // 48px per tile
-const GROUND_ROWS_PORTRAIT = 7
-const GROUND_ROWS_LANDSCAPE = 4
+const GROUND_ROWS = 7
 
 async function buildTilemap(app) {
   const screenW = app.screen.width
@@ -81,8 +80,6 @@ export default function PixiApp({ className = '' }) {
       if (!canvasRef.current || cancelled) return
       const w = canvasRef.current.offsetWidth || window.innerWidth || 640
       const h = canvasRef.current.offsetHeight || window.innerHeight || 448
-      const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
-      const GROUND_ROWS = isMobileLandscape ? GROUND_ROWS_LANDSCAPE : GROUND_ROWS_PORTRAIT
 
       const app = new Application()
       await app.init({
