@@ -30,8 +30,7 @@ async function buildTilemap(app) {
   const texDirtGrass = new Texture({ source: tilesetTexture.source, frame: new Rectangle(16, 0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
   const texDirt      = new Texture({ source: tilesetTexture.source, frame: new Rectangle(0,  0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
 
-  // Two containers: bgLayer (grass row, behind sprites) + fgLayer (dirt rows, in front)
-  const bgLayer = new Container()
+  // Single fg container — all ground tiles render in front of sprites
   const fgLayer = new Container()
   const groundY = screenH - GROUND_ROWS * TILE_SIZE
 
@@ -50,14 +49,11 @@ async function buildTilemap(app) {
       spr.width = TILE_SIZE
       spr.height = TILE_SIZE
 
-      // Grass row goes behind sprites, dirt rows go in front
-      if (row === 0) bgLayer.addChild(spr)
-      else fgLayer.addChild(spr)
+      // All ground rows go in front of sprites
+      fgLayer.addChild(spr)
     }
   }
 
-  // bgLayer added now (behind sprites), fgLayer returned to add after sprites
-  app.stage.addChild(bgLayer)
   return { groundY, fgLayer }
 }
 
