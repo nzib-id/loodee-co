@@ -6,8 +6,8 @@ const initialAgents = [
     name: 'Loodee',
     role: 'Orchestrator',
     model: 'claude-sonnet-4-6',
-    status: 'active',
-    load: 72,
+    status: 'offline',
+    load: 0,
     color: '#7c6af7',
     sprite: 'soldier',
   },
@@ -16,7 +16,7 @@ const initialAgents = [
     name: 'CodeBot',
     role: 'Engineering',
     model: 'claude-sonnet-4-6',
-    status: 'idle',
+    status: 'offline',
     load: 0,
     color: '#38bdf8',
     sprite: 'orc',
@@ -26,7 +26,7 @@ const initialAgents = [
     name: 'ResearchBot',
     role: 'Intelligence',
     model: 'qwen2.5:7b',
-    status: 'idle',
+    status: 'offline',
     load: 0,
     color: '#f59e0b',
     sprite: null,
@@ -36,19 +36,14 @@ const initialAgents = [
     name: 'CreativeBot',
     role: 'Creative',
     model: 'claude-sonnet-4-6',
-    status: 'idle',
+    status: 'offline',
     load: 0,
     color: '#f472b6',
     sprite: null,
   },
 ]
 
-const initialLogs = [
-  { id: 1, time: '01:04', agent: 'loodee', agentName: 'Loodee', msg: 'Loodee Co. HQ initialized ✅', color: '#7c6af7' },
-  { id: 2, time: '00:51', agent: 'loodee', agentName: 'Loodee', msg: 'Vite + React + Pixi.js scaffold ready', color: '#7c6af7' },
-  { id: 3, time: '00:29', agent: 'loodee', agentName: 'Loodee', msg: 'Ollama qwen3:8b + qwen2.5:7b connected', color: '#7c6af7' },
-  { id: 4, time: '23:13', agent: 'loodee', agentName: 'Loodee', msg: 'Session started — Nzib online', color: '#7c6af7' },
-]
+const initialLogs = []
 
 export const useAgentStore = create((set) => ({
   agents: initialAgents,
