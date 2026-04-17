@@ -158,7 +158,8 @@ export default function PixiApp({ className = '' }) {
       const { groundY, fgLayer } = await buildTilemap(app)
 
       // floorY = where character feet should touch
-      const floorY = groundY + 45
+      const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
+      const floorY = groundY + 45 + (isMobileLandscape ? 60 : 0)
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
