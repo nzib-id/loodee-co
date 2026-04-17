@@ -105,33 +105,26 @@ export default function PixiApp({ className = '' }) {
       app.stage.addChild(mountainSprite)
 
       // Trees — in front of mountain, behind sprites
-      const treesTexture = await Assets.load('/assets/trees.png')
-      treesTexture.source.scaleMode = 'nearest'
+      const tree1Tex = await Assets.load('/assets/tree1.png')
+      const tree2Tex = await Assets.load('/assets/tree2.png')
+      tree1Tex.source.scaleMode = 'nearest'
+      tree2Tex.source.scaleMode = 'nearest'
       const TREE_SCALE = 2.5
-      const treeDefs = [
-        { x: 0,  w: 47, h: 52, yOffset: 48 }, // tree 0 — tall
-        { x: 47, w: 55, h: 37, yOffset: 40 }, // tree 1 — shorter
-      ]
       const treePositions = [
-        { x: 0.04, treeIdx: 0 },
-        { x: 0.14, treeIdx: 1 },
-        { x: 0.30, treeIdx: 0 },
-        { x: 0.55, treeIdx: 1 },
-        { x: 0.72, treeIdx: 0 },
-        { x: 0.88, treeIdx: 1 },
+        { x: 0.04, tex: tree1Tex },
+        { x: 0.14, tex: tree2Tex },
+        { x: 0.30, tex: tree1Tex },
+        { x: 0.55, tex: tree2Tex },
+        { x: 0.72, tex: tree1Tex },
+        { x: 0.88, tex: tree2Tex },
       ]
-      const treeGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE
-      for (const { x, treeIdx } of treePositions) {
-        const def = treeDefs[treeIdx]
-        const treeTex = new Texture({
-          source: treesTexture.source,
-          frame: new Rectangle(def.x, 0, def.w, def.h),
-        })
-        const treeSprite = new Sprite(treeTex)
+      const treeGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE + 48
+      for (const { x, tex } of treePositions) {
+        const treeSprite = new Sprite(tex)
         treeSprite.scale.set(TREE_SCALE)
         treeSprite.anchor.set(0.5, 1)
         treeSprite.x = app.screen.width * x
-        treeSprite.y = treeGroundY + def.yOffset
+        treeSprite.y = treeGroundY
         app.stage.addChild(treeSprite)
       }
 
