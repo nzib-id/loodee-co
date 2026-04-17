@@ -17,7 +17,7 @@ import orcHurt from '../../assets/sprites/Orc/Orc/Orc-Hurt.png'
 const TILE_SRC_SIZE = 16
 const TILE_SCALE = 3
 const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE  // 48px per tile
-const GROUND_ROWS = 11  // ~50% of screen height (11 * 48px = 528px)
+const GROUND_ROWS = 7
 
 async function buildTilemap(app) {
   const screenW = app.screen.width
@@ -172,7 +172,7 @@ export default function PixiApp({ className = '' }) {
       })
       await loodee.load()
       loodee.playAnim('Walk')
-      const loodeeStartX = app.screen.width * 0.25
+      const loodeeStartX = app.screen.width * 0.15
       loodee.setPosition(loodeeStartX, floorY)
       app.stage.addChild(loodee.container)
       agentsRef.current.push(loodee)
@@ -192,7 +192,7 @@ export default function PixiApp({ className = '' }) {
       })
       await codebot.load()
       codebot.playAnim('Walk')
-      const codebotStartX = app.screen.width * 0.65
+      const codebotStartX = app.screen.width * 0.55
       codebot.setPosition(codebotStartX, floorY)
       app.stage.addChild(codebot.container)
       agentsRef.current.push(codebot)
@@ -212,7 +212,7 @@ export default function PixiApp({ className = '' }) {
       })
       await researchbot.load()
       researchbot.playAnim('Walk')
-      const researchbotStartX = app.screen.width * 0.75
+      const researchbotStartX = app.screen.width * 0.70
       researchbot.setPosition(researchbotStartX, floorY)
       app.stage.addChild(researchbot.container)
       agentsRef.current.push(researchbot)
@@ -244,14 +244,14 @@ export default function PixiApp({ className = '' }) {
       let loodeeDir = 1
       let posX = loodeeStartX
       const loodeeSpeed = 0.8
-      const loodeeMinX = app.screen.width * 0.08
-      const loodeeMaxX = app.screen.width * 0.45
+      const loodeeMinX = app.screen.width * 0.06
+      const loodeeMaxX = app.screen.width * 0.28
 
       // Walk cycles config
       const walkers = [
-        { agent: codebot,     x: codebotStartX,    dir: -1, speed: 0.6,  minX: app.screen.width * 0.52, maxX: app.screen.width * 0.70 },
-        { agent: researchbot, x: researchbotStartX, dir:  1, speed: 0.5,  minX: app.screen.width * 0.60, maxX: app.screen.width * 0.80 },
-        { agent: creativebot, x: creativebotStartX, dir: -1, speed: 0.7,  minX: app.screen.width * 0.70, maxX: app.screen.width * 0.92 },
+        { agent: codebot,     x: codebotStartX,    dir: -1, speed: 0.6,  minX: app.screen.width * 0.45, maxX: app.screen.width * 0.62 },
+        { agent: researchbot, x: researchbotStartX, dir:  1, speed: 0.5,  minX: app.screen.width * 0.62, maxX: app.screen.width * 0.78 },
+        { agent: creativebot, x: creativebotStartX, dir: -1, speed: 0.7,  minX: app.screen.width * 0.78, maxX: app.screen.width * 0.93 },
       ]
 
       app.ticker.add(() => {

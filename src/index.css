@@ -128,13 +128,14 @@ body {
   }
 }
 
-/* Mobile: full-screen canvas + slide-up drawer */
+/* Mobile: landscape canvas (16:9) + slide-up drawer */
 @media (max-width: 767px) {
   .canvas-area {
     position: fixed !important;
-    inset: 0 !important;
-    height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100vw !important;
+    height: 56.25vw !important;
   }
 
   .panel-drawer {
