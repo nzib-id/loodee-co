@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Application, Graphics, Sprite, Texture, Rectangle } from 'pixi.js'
+import { Application, Container, Graphics, Sprite, Texture, Rectangle } from 'pixi.js'
 import { SpriteAgent } from './SpriteAgent.js'
 
 import soldierIdle from '../../assets/sprites/Soldier/Soldier/Soldier-Idle.png'
@@ -10,35 +10,27 @@ import soldierHurt from '../../assets/sprites/Soldier/Soldier/Soldier-Hurt.png'
 import orcIdle from '../../assets/sprites/Orc/Orc/Orc-Idle.png'
 import orcWalk from '../../assets/sprites/Orc/Orc/Orc-Walk.png'
 import orcDeath from '../../assets/sprites/Orc/Orc/Orc-Death.png'
-import tilesetSrc from '/assets/tileset.png'
 
-// Tileset config (16x16 tiles, 3 tiles horizontal)
+// Tileset config
 const TILE_SRC_SIZE = 16
-const TILE_SCALE = 3           // render each tile at 48x48px
-const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE
+const TILE_SCALE = 3
+const TILE_SIZE = TILE_SRC_SIZE * TILE_SCALE  // 48px per tile
+const GROUND_ROWS = 5
 
-// Tile indices in sprite sheet (x offset in source px)
-const TILE_DIRT       = 0   // x:0
-const TILE_DIRT_GRASS = 16  // x:16
-const TILE_GRASS      = 32  // x:32
-
-// Ground layout: how many rows from bottom
-const GROUND_ROWS = 5  // total ground rows
-// Row 0 from bottom = pure grass top, row 1 = dirt-grass, rows 2+ = dirt
-
-function buildTilemap(app, tilesetTexture) {
+async function buildTilemap(app) {
   const screenW = app.screen.width
   const screenH = app.screen.height
-  const cols = Math.ceil(screenW / TILE_SIZE) + 1
+  const cols = Math.ceil(screenW / TILE_SIZE) + 2
 
-  // Pre-slice tile textures
-  const texDirt      = new Texture({ source: tilesetTexture.source, frame: new Rectangle(TILE_DIRT,       0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
-  const texDirtGrass = new Texture({ source: tilesetTexture.source, frame: new Rectangle(TILE_DIRT_GRASS, 0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
-  const texGrass     = new Texture({ source: tilesetTexture.source, frame: new Rectangle(TILE_GRASS,      0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
+  const tilesetTexture = await Texture.fromURL('/assets/tileset.png')
+  tilesetTexture.source.scaleMode = 'nearest'
 
-  const tilemapContainer = new Graphics()
+  // Slice tiles from sprite sheet
+  const texGrass     = new Texture({ source: tilesetTexture.source, frame: new Rectangle(32, 0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
+  const texDirtGrass = new Texture({ source: tilesetTexture.source, frame: new Rectangle(16, 0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
+  const texDirt      = new Texture({ source: tilesetTexture.source, frame: new Rectangle(0,  0, TILE_SRC_SIZE, TILE_SRC_SIZE) })
 
-  // Ground top Y (where grass row starts)
+  const tilemapContainer = new Container()
   const groundY = screenH - GROUND_ROWS * TILE_SIZE
 
   for (let row = 0; row < GROUND_ROWS; row++) {
@@ -53,20 +45,14 @@ function buildTilemap(app, tilesetTexture) {
       const spr = new Sprite(tex)
       spr.x = x
       spr.y = y
-      spr.scale.set(TILE_SCALE)
-      // disable pixi texture smoothing for pixel art
-      spr.texture.source.scaleMode = 'nearest'
-      app.stage.addChild(spr)
+      spr.width = TILE_SIZE
+      spr.height = TILE_SIZE
+      tilemapContainer.addChild(spr)
     }
   }
 
-  return { groundY, tilemapContainer }
-}
-
-function drawSky(app) {
-  const sky = new Graphics()
-  sky.rect(0, 0, app.screen.width, app.screen.height).fill({ color: 0x4d9be6 })
-  app.stage.addChildAt(sky, 0)
+  app.stage.addChild(tilemapContainer)
+  return groundY
 }
 
 export default function PixiApp({ className = '' }) {
@@ -99,20 +85,13 @@ export default function PixiApp({ className = '' }) {
       if (cancelled) { app.destroy(); return }
       appRef.current = app
 
-      // Sky background
-      drawSky(app)
+      // Build tilemap, returns groundY (top of grass row)
+      const groundY = await buildTilemap(app)
 
-      // Load tileset
-      const tilesetTexture = await Texture.fromURL(tilesetSrc)
-      tilesetTexture.source.scaleMode = 'nearest'
+      // Sprite foot position = top of grass row
+      const floorY = groundY
 
-      // Build tilemap, get groundY
-      const { groundY } = buildTilemap(app, tilesetTexture)
-
-      // Ground line Y for character feet
-      const floorY = groundY - 4
-
-      // Loodee — Soldier, stands on ground
+      // Loodee — Soldier
       const loodee = new SpriteAgent({
         name: 'Loodee',
         spritePaths: {
@@ -126,13 +105,13 @@ export default function PixiApp({ className = '' }) {
         animationSpeed: 0.13,
       })
       await loodee.load()
-      // Anchor feet to ground
-      const loodeeX = app.screen.width * 0.25
-      loodee.setPosition(loodeeX, floorY - loodee.container.height / 2 + 10)
+      loodee.playAnim('Walk')
+      const loodeeStartX = app.screen.width * 0.25
+      loodee.setPosition(loodeeStartX, floorY)
       app.stage.addChild(loodee.container)
       agentsRef.current.push(loodee)
 
-      // Orc — further right, also on ground
+      // Orc
       const orc = new SpriteAgent({
         name: 'Orc',
         spritePaths: {
@@ -144,28 +123,26 @@ export default function PixiApp({ className = '' }) {
         animationSpeed: 0.1,
       })
       await orc.load()
-      const orcX = app.screen.width * 0.65
-      orc.setPosition(orcX, floorY - orc.container.height / 2 + 10)
+      orc.setPosition(app.screen.width * 0.65, floorY)
       app.stage.addChild(orc.container)
       agentsRef.current.push(orc)
 
-      // Simple walk cycle for Loodee
-      let loodeeDir = 1
-      let loodeePos = loodeeX
-      const walkSpeed = 0.6
-      const walkBound = app.screen.width * 0.45
-
-      loodee.playAnim('Walk')
+      // Walk cycle for Loodee
+      let dir = 1
+      let posX = loodeeStartX
+      const speed = 0.8
+      const minX = app.screen.width * 0.08
+      const maxX = app.screen.width * 0.45
 
       app.ticker.add(() => {
-        loodeePos += walkSpeed * loodeeDir
-        if (loodeePos > walkBound || loodeePos < app.screen.width * 0.08) {
-          loodeeDir *= -1
-          loodee.container.scale.x = loodeeDir < 0
+        posX += speed * dir
+        if (posX > maxX || posX < minX) {
+          dir *= -1
+          loodee.container.scale.x = dir < 0
             ? -Math.abs(loodee.container.scale.x)
             : Math.abs(loodee.container.scale.x)
         }
-        loodee.container.x = loodeePos
+        loodee.container.x = posX
       })
     }
 
