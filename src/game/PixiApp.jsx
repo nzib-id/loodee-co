@@ -83,7 +83,7 @@ export default function PixiApp({ className = '' }) {
       const w = parent?.offsetWidth || canvasRef.current.offsetWidth || window.innerWidth || 640
       const h = parent?.offsetHeight || canvasRef.current.offsetHeight || window.innerHeight || 448
       const isLandscape = w > h
-      const GROUND_ROWS = isLandscape ? 5 : 7
+      const GROUND_ROWS = isLandscape ? 5 : 9
 
       const app = new Application()
       await app.init({
