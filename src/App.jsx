@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import PixiApp from './game/PixiApp.jsx'
 import AgentPanel from './ui/AgentPanel.jsx'
 import LogPanel from './ui/LogPanel.jsx'
@@ -23,16 +23,14 @@ function LiveClock() {
 }
 
 export default function App() {
-  const [panelOpen, setPanelOpen] = useState(false)
-
   useEffect(() => {
     initSocket()
   }, [])
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
-      {/* Canvas — fixed full-screen on mobile, flex item on md+ */}
-      <div className="canvas-area relative h-[45vh] md:h-[50vh] lg:h-auto lg:flex-1 min-w-0 overflow-hidden scanline-overlay">
+    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
+      {/* Canvas — fixed height on mobile, flex-1 on desktop */}
+      <div className="relative h-[280px] lg:flex-1 min-w-0 overflow-hidden scanline-overlay">
         {/* Corner HUD */}
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
           <div
@@ -59,44 +57,18 @@ export default function App() {
         <PixiApp className="w-full h-full" />
       </div>
 
-      {/* Mobile backdrop — only shown when panel open */}
+      {/* Panels — always visible below canvas */}
       <div
-        className={`fixed inset-0 z-30 md:hidden transition-opacity duration-300 ${panelOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.4)' }}
-        onClick={() => setPanelOpen(false)}
-      />
-
-      {/* Mobile floating toggle button */}
-      <button
-        className="fixed bottom-4 right-4 z-50 md:hidden px-3 py-2 text-xs font-heading"
-        style={{
-          background: '#292929',
-          border: '2px solid #ffe500',
-          boxShadow: '3px 3px 0 rgba(0,0,0,1)',
-          color: '#ffe500',
-        }}
-        onClick={() => setPanelOpen(v => !v)}
-      >
-        ≡ HQ
-      </button>
-
-      {/* Panels — slide-up drawer on mobile, flex item on md+ */}
-      <div
-        className={`panel-drawer ${panelOpen ? 'open' : ''} flex flex-col md:flex-row lg:flex-col flex-1 lg:flex-none lg:w-72 overflow-hidden panel-divider`}
+        className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden panel-divider"
         style={{ background: '#292929' }}
       >
-        {/* Drag handle — mobile only */}
-        <div className="md:hidden flex justify-center py-2 shrink-0 cursor-grab">
-          <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.3)' }} />
-        </div>
-
         {/* Agent list */}
         <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
           <AgentPanel />
         </div>
 
-        {/* Activity log — h-44 mobile, w-64 tablet, h-64 desktop */}
-        <div className="h-44 shrink-0 md:h-auto md:w-64 lg:h-64 lg:w-auto overflow-hidden">
+        {/* Activity log */}
+        <div className="h-44 shrink-0 lg:h-auto lg:w-64 overflow-hidden log-divider">
           <LogPanel />
         </div>
       </div>
