@@ -113,12 +113,20 @@ function pollOpenClaw() {
       }
     }
 
-    // Always send current Loodee state on every poll so frontend stays in sync
+    // Always broadcast current states so frontend stays in sync
     const loodeeUpdated = latestUpdated.get('loodee') ?? 0
     const loodeeMsSince = now - loodeeUpdated
     const loodeeActive = loodeeMsSince < ACTIVE_THRESHOLD_MS
     const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
+
+    // CodeBot active when Loodee is active (pair programming mode)
+    // ResearchBot & CreativeBot idle until they have real sessions
+    if (loodeeActive) {
+      broadcast({ type: 'agent_status', agentId: 'codebot', status: 'active', load: Math.max(10, loodeeLoad - 15) })
+    } else {
+      broadcast({ type: 'agent_status', agentId: 'codebot', status: 'idle', load: 0 })
+    }
 
   } catch (err) {
     console.error('[poll] Error reading sessions file:', err.message)
