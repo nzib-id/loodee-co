@@ -75,13 +75,17 @@ export class SpriteAgent {
   _addNameLabel() {
     const style = new TextStyle({
       fontFamily: 'Courier New',
-      fontSize: 10,
-      fill: '#7c6af7',
+      fontSize: 16,
+      fontWeight: 'bold',
+      fill: '#ffffff',
       letterSpacing: 1,
+      stroke: { color: '#000000', width: 3 },
     })
     const label = new Text({ text: this.name, style })
-    label.anchor.set(0.5, 0)
-    label.y = 4
+    label.anchor.set(0.5, 1)  // anchor bottom-center
+    // Position above head: sprite head is around y = -56*scale + topPx*scale
+    // topPx ≈ 39, so head ≈ -(56-39)*scale = -17*scale above container origin
+    label.y = -56 * this.scale - 8  // 8px gap above head
     this.container.addChild(label)
   }
 
