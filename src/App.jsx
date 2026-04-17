@@ -68,7 +68,7 @@ export default function App() {
         </div>
         <div className="flex flex-col w-80 min-h-0 overflow-hidden panel-divider" style={{ background: '#292929' }}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><AgentPanel /></div>
-          <div className="h-44 shrink-0 lg:h-auto lg:w-64 overflow-hidden log-divider"><LogPanel /></div>
+          <div className="h-64 shrink-0 overflow-hidden log-divider"><LogPanel /></div>
         </div>
       </div>
     )
