@@ -109,8 +109,8 @@ export default function PixiApp({ className = '' }) {
       treesTexture.source.scaleMode = 'nearest'
       const TREE_SCALE = 2.5
       const treeDefs = [
-        { x: 0,  w: 47, h: 52 }, // tree 0
-        { x: 47, w: 55, h: 37 }, // tree 1
+        { x: 0,  w: 47, h: 52, yOffset: 48 }, // tree 0 — tall
+        { x: 47, w: 55, h: 37, yOffset: 10 }, // tree 1 — shorter, less offset
       ]
       const treePositions = [
         { x: 0.04, treeIdx: 0 },
@@ -131,7 +131,7 @@ export default function PixiApp({ className = '' }) {
         treeSprite.scale.set(TREE_SCALE)
         treeSprite.anchor.set(0.5, 1)
         treeSprite.x = app.screen.width * x
-        treeSprite.y = treeGroundY + 48
+        treeSprite.y = treeGroundY + def.yOffset
         app.stage.addChild(treeSprite)
       }
 
