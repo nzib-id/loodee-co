@@ -103,7 +103,7 @@ export default function PixiApp({ className = '' }) {
       mountainSprite.scale.set(mtScale)
       mountainSprite.x = 0
       const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
-      const landscapeOffset = isMobileLandscape ? 60 : 0
+      const landscapeOffset = isMobileLandscape ? 80 : 0
       // Snap mountain bottom — overlap with ground a bit
       const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
       mountainSprite.y = groundTopY - mountainTexture.height * mtScale + 200 + landscapeOffset
