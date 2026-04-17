@@ -2,7 +2,8 @@ import express from 'express'
 import { createServer } from 'http'
 import { WebSocketServer } from 'ws'
 import cors from 'cors'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
+import { execSync } from 'child_process'
 import { homedir } from 'os'
 import path from 'path'
 
@@ -120,8 +121,13 @@ function pollOpenClaw() {
     const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
 
-    // CodeBot active when Loodee is active (pair programming mode)
-    broadcast({ type: 'agent_status', agentId: 'codebot', status: loodeeActive ? 'active' : 'idle', load: loodeeActive ? Math.max(10, loodeeLoad - 15) : 0 })
+    // CodeBot active only when a claude process is actually running
+    let codebotActive = false
+    try {
+      const out = execSync('pgrep -f "claude --permission-mode"', { timeout: 1000 }).toString().trim()
+      codebotActive = out.length > 0
+    } catch { codebotActive = false }
+    broadcast({ type: 'agent_status', agentId: 'codebot', status: codebotActive ? 'active' : 'idle', load: codebotActive ? 55 : 0 })
 
     // ResearchBot & CreativeBot: use real session data if available, else idle
     for (const id of ['researchbot', 'creativebot']) {
