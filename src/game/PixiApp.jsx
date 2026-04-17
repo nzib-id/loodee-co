@@ -89,7 +89,7 @@ export default function PixiApp({ className = '' }) {
       const groundY = await buildTilemap(app)
 
       // floorY = where character feet should touch
-      const floorY = groundY + 20  // sink feet into grass row
+      const floorY = groundY + 45  // measured from screenshot: ~25px gap to close
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
