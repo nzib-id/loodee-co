@@ -28,9 +28,9 @@ export default function App() {
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
-      {/* Left — Pixi.js game canvas */}
-      <div className="relative flex-1 min-w-0 overflow-hidden scanline-overlay">
+    <div className="flex flex-col lg:flex-row h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
+      {/* Top/Left — Pixi.js game canvas */}
+      <div className="relative h-[45vh] md:h-[50vh] lg:h-auto lg:flex-1 min-w-0 overflow-hidden scanline-overlay">
         {/* Corner HUD */}
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
           <div
@@ -57,21 +57,18 @@ export default function App() {
         <PixiApp className="w-full h-full" />
       </div>
 
-      {/* Right — UI panels */}
+      {/* Bottom/Right — UI panels */}
       <div
-        className="w-72 shrink-0 flex flex-col overflow-hidden"
-        style={{
-          background: '#292929',
-          borderLeft: '2px solid rgba(255,255,255,0.15)',
-        }}
+        className="flex flex-col md:flex-row lg:flex-col flex-1 lg:flex-none lg:w-72 overflow-hidden panel-divider"
+        style={{ background: '#292929' }}
       >
-        {/* Agent list — takes upper 2/3 */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Agent list */}
+        <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
           <AgentPanel />
         </div>
 
-        {/* Activity log — takes lower 1/3 */}
-        <div className="h-64 shrink-0 overflow-hidden">
+        {/* Activity log — h-44 mobile, w-64 tablet, h-64 desktop */}
+        <div className="h-44 shrink-0 md:h-auto md:w-64 lg:h-64 lg:w-auto overflow-hidden">
           <LogPanel />
         </div>
       </div>

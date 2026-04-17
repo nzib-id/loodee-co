@@ -34,11 +34,8 @@ export default function LogPanel() {
 
   return (
     <div
-      className="flex flex-col h-full"
-      style={{
-        background: '#292929',
-        borderTop: '2px solid rgba(255,255,255,0.12)',
-      }}
+      className="flex flex-col h-full log-divider"
+      style={{ background: '#292929' }}
     >
       {/* Header */}
       <div

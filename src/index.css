@@ -104,3 +104,26 @@ body {
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 1);
   transform: translate(2px, 2px);
 }
+
+/* Responsive panel borders */
+.panel-divider {
+  border-top: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+@media (min-width: 1024px) {
+  .panel-divider {
+    border-top: none;
+    border-left: 2px solid rgba(255, 255, 255, 0.15);
+  }
+}
+
+.log-divider {
+  border-top: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .log-divider {
+    border-top: none;
+    border-left: 2px solid rgba(255, 255, 255, 0.12);
+  }
+}
