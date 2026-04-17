@@ -88,9 +88,8 @@ export default function PixiApp({ className = '' }) {
       // Build tilemap, returns groundY (top of grass row)
       const groundY = await buildTilemap(app)
 
-      // Sprite anchor is (0.5,1) = feet at bottom of sprite
-      // groundY = top of grass row → set feet there
-      const floorY = groundY + TILE_SIZE * 0.3  // sink feet slightly into grass top
+      // floorY = top of grass row = where feet should be
+      const floorY = groundY + TILE_SIZE * 0.5  // mid grass row so feet look grounded
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({

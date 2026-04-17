@@ -63,6 +63,9 @@ export class SpriteAgent {
     anim.loop = animName !== 'Death'
     anim.anchor.set(0.5, 1)
     anim.scale.set(this.scale)
+    // Sprite sheet has ~15% transparent padding at bottom
+    // Offset upward so visual feet align with anchor point
+    anim.y = -SPRITE_FRAME_SIZE * this.scale * 0.15
     anim.play()
 
     this.currentAnim = anim
