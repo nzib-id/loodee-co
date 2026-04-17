@@ -159,7 +159,10 @@ export default function PixiApp({ className = '' }) {
 
       // floorY = where character feet should touch
       const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
-      const floorY = groundY + 45 + (isMobileLandscape ? 60 : 0)
+      const landscapeOffset = isMobileLandscape ? 60 : 0
+      const floorY = groundY + 45 + landscapeOffset
+      // Shift entire ground layer down on mobile landscape
+      fgLayer.y += landscapeOffset
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
