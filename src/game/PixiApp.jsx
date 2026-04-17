@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Application, Assets, Container, Sprite, Texture, Rectangle, Text, TextStyle, Graphics } from 'pixi.js'
+import { Application, Assets, Container, Sprite, Texture, Rectangle } from 'pixi.js'
 import { SpriteAgent } from './SpriteAgent.js'
 
 import soldierIdle from '../../assets/sprites/Soldier/Soldier/Soldier-Idle.png'
@@ -138,13 +138,45 @@ export default function PixiApp({ className = '' }) {
       app.stage.addChild(codebot.container)
       agentsRef.current.push(codebot)
 
-      // ResearchBot — floating label agent (no sprite yet)
-      const researchLabel = createFloatingAgent(app, 'ResearchBot', '#f59e0b', app.screen.width * 0.35, floorY - 60)
-      app.stage.addChild(researchLabel)
+      // ResearchBot — Orc
+      const researchbot = new SpriteAgent({
+        name: 'ResearchBot',
+        spritePaths: {
+          Idle: orcIdle,
+          Walk: orcWalk,
+          Attack01: orcAttack01,
+          Death: orcDeath,
+          Hurt: orcHurt,
+        },
+        scale: 2.5,
+        animationSpeed: 0.09,
+      })
+      await researchbot.load()
+      researchbot.playAnim('Walk')
+      const researchbotStartX = app.screen.width * 0.75
+      researchbot.setPosition(researchbotStartX, floorY)
+      app.stage.addChild(researchbot.container)
+      agentsRef.current.push(researchbot)
 
-      // CreativeBot — floating label agent (no sprite yet)
-      const creativeLabel = createFloatingAgent(app, 'CreativeBot', '#f472b6', app.screen.width * 0.50, floorY - 90)
-      app.stage.addChild(creativeLabel)
+      // CreativeBot — Orc
+      const creativebot = new SpriteAgent({
+        name: 'CreativeBot',
+        spritePaths: {
+          Idle: orcIdle,
+          Walk: orcWalk,
+          Attack01: orcAttack01,
+          Death: orcDeath,
+          Hurt: orcHurt,
+        },
+        scale: 2.5,
+        animationSpeed: 0.11,
+      })
+      await creativebot.load()
+      creativebot.playAnim('Walk')
+      const creativebotStartX = app.screen.width * 0.85
+      creativebot.setPosition(creativebotStartX, floorY)
+      app.stage.addChild(creativebot.container)
+      agentsRef.current.push(creativebot)
 
       // Dirt layer on top of sprites — gives depth effect (sprites behind dirt)
       app.stage.addChild(fgLayer)
@@ -156,12 +188,12 @@ export default function PixiApp({ className = '' }) {
       const loodeeMinX = app.screen.width * 0.08
       const loodeeMaxX = app.screen.width * 0.45
 
-      // Walk cycle for CodeBot
-      let codebotDir = -1
-      let codebotX = codebotStartX
-      const codebotSpeed = 0.6
-      const codebotMinX = app.screen.width * 0.52
-      const codebotMaxX = app.screen.width * 0.88
+      // Walk cycles config
+      const walkers = [
+        { agent: codebot,     x: codebotStartX,    dir: -1, speed: 0.6,  minX: app.screen.width * 0.52, maxX: app.screen.width * 0.70 },
+        { agent: researchbot, x: researchbotStartX, dir:  1, speed: 0.5,  minX: app.screen.width * 0.60, maxX: app.screen.width * 0.80 },
+        { agent: creativebot, x: creativebotStartX, dir: -1, speed: 0.7,  minX: app.screen.width * 0.70, maxX: app.screen.width * 0.92 },
+      ]
 
       app.ticker.add(() => {
         // Loodee
@@ -172,13 +204,15 @@ export default function PixiApp({ className = '' }) {
         }
         loodee.container.x = posX
 
-        // CodeBot
-        codebotX += codebotSpeed * codebotDir
-        if (codebotX > codebotMaxX || codebotX < codebotMinX) {
-          codebotDir *= -1
-          codebot.setFlip(codebotDir < 0)
+        // Other agents
+        for (const w of walkers) {
+          w.x += w.speed * w.dir
+          if (w.x > w.maxX || w.x < w.minX) {
+            w.dir *= -1
+            w.agent.setFlip(w.dir < 0)
+          }
+          w.agent.container.x = w.x
         }
-        codebot.container.x = codebotX
       })
     }
 
@@ -204,38 +238,4 @@ export default function PixiApp({ className = '' }) {
   )
 }
 
-// Floating label for agents without a sprite yet
-function createFloatingAgent(app, name, color, x, y) {
-  const container = new Container()
 
-  // Background pill
-  const bg = new Graphics()
-  bg.roundRect(-48, -14, 96, 28, 8)
-  bg.fill({ color: 0x000000, alpha: 0.55 })
-  bg.stroke({ color: color.replace('#', '0x'), width: 1.5, alpha: 0.8 })
-  container.addChild(bg)
-
-  // Name label
-  const style = new TextStyle({
-    fontFamily: 'heading-font, Courier New, monospace',
-    fontSize: 11,
-    fill: color,
-    letterSpacing: 1,
-    stroke: { color: '#000000', width: 2 },
-  })
-  const label = new Text({ text: name, style })
-  label.anchor.set(0.5, 0.5)
-  container.addChild(label)
-
-  container.x = x
-  container.y = y
-
-  // Subtle float animation
-  let t = Math.random() * Math.PI * 2
-  app.ticker.add(() => {
-    t += 0.02
-    container.y = y + Math.sin(t) * 4
-  })
-
-  return container
-}
