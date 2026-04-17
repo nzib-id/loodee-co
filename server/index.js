@@ -113,7 +113,7 @@ function pollOpenClaw() {
       }
     }
 
-    // Always broadcast current states so frontend stays in sync
+    // Always broadcast ALL agent statuses every poll so frontend stays in sync
     const loodeeUpdated = latestUpdated.get('loodee') ?? 0
     const loodeeMsSince = now - loodeeUpdated
     const loodeeActive = loodeeMsSince < ACTIVE_THRESHOLD_MS
@@ -121,11 +121,14 @@ function pollOpenClaw() {
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
 
     // CodeBot active when Loodee is active (pair programming mode)
-    // ResearchBot & CreativeBot idle until they have real sessions
-    if (loodeeActive) {
-      broadcast({ type: 'agent_status', agentId: 'codebot', status: 'active', load: Math.max(10, loodeeLoad - 15) })
-    } else {
-      broadcast({ type: 'agent_status', agentId: 'codebot', status: 'idle', load: 0 })
+    broadcast({ type: 'agent_status', agentId: 'codebot', status: loodeeActive ? 'active' : 'idle', load: loodeeActive ? Math.max(10, loodeeLoad - 15) : 0 })
+
+    // ResearchBot & CreativeBot: use real session data if available, else idle
+    for (const id of ['researchbot', 'creativebot']) {
+      const updated = latestUpdated.get(id) ?? 0
+      const msSince = now - updated
+      const isActive = updated > 0 && msSince < ACTIVE_THRESHOLD_MS
+      broadcast({ type: 'agent_status', agentId: id, status: isActive ? 'active' : 'idle', load: isActive ? Math.round(60 - (msSince / ACTIVE_THRESHOLD_MS) * 60) : 0 })
     }
 
   } catch (err) {
@@ -157,11 +160,23 @@ setInterval(() => {
   })
 }, 30000)
 
-httpServer.listen(PORT, () => {
+httpServer.on('listening', () => {
   console.log(`🏠 Loodee Co. backend running on ws://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/health`)
   console.log(`   Sessions file: ${SESSIONS_FILE}`)
 })
+
+// Never crash on EADDRINUSE — just keep retrying every 2s
+httpServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[server] Port ${PORT} in use, retrying in 2s...`)
+    setTimeout(() => httpServer.listen(PORT), 2000)
+  } else {
+    throw err
+  }
+})
+
+httpServer.listen(PORT)
 
 // Graceful shutdown — release port immediately on exit
 function shutdown() {
@@ -171,16 +186,3 @@ function shutdown() {
 }
 process.on('SIGTERM', shutdown)
 process.on('SIGINT', shutdown)
-
-// Handle EADDRINUSE gracefully
-httpServer.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`[server] Port ${PORT} in use, retrying in 2s...`)
-    setTimeout(() => {
-      httpServer.close()
-      httpServer.listen(PORT)
-    }, 2000)
-  } else {
-    throw err
-  }
-})
