@@ -23,8 +23,8 @@ function LiveClock() {
 }
 
 export default function App() {
-  const [isMobileDevice, setIsMobileDevice] = useState(
-    () => Math.min(window.screen.width, window.screen.height) < 768
+  const [isLandscape, setIsLandscape] = useState(
+    () => window.innerWidth > window.innerHeight && window.innerWidth < 1024
   )
   const [panelOpen, setPanelOpen] = useState(false)
 
@@ -34,9 +34,9 @@ export default function App() {
 
   useEffect(() => {
     const check = () => {
-      const mobile = Math.min(window.screen.width, window.screen.height) < 768
-      setIsMobileDevice(mobile)
-      if (!mobile) setPanelOpen(false)
+      const landscape = window.innerWidth > window.innerHeight && window.innerWidth < 1024
+      setIsLandscape(landscape)
+      if (!landscape) setPanelOpen(false)
     }
     window.addEventListener('resize', check)
     window.addEventListener('orientationchange', check)
@@ -47,8 +47,9 @@ export default function App() {
   }, [])
 
 
-  // Mobile: canvas fullscreen, panel drawer
-  if (isMobileDevice) {
+  // Mobile portrait: canvas fills screen, panel hidden by default
+  const isMobile = window.innerWidth < 1024
+  if (isMobile) {
     return (
       <div className="relative w-screen h-screen overflow-hidden" style={{ background: '#292929' }}>
         {/* Canvas fullscreen */}
@@ -85,7 +86,7 @@ export default function App() {
         <div
           className="fixed bottom-0 left-0 right-0 z-40 flex flex-col overflow-hidden"
           style={{
-            height: '70vh',
+            height: isLandscape ? '65vh' : '70vh',
             background: '#292929',
             borderTop: '2px solid rgba(255,229,0,0.3)',
             transform: panelOpen ? 'translateY(0)' : 'translateY(100%)',

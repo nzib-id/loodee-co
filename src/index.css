@@ -128,17 +128,3 @@ body {
   }
 }
 
-/* Mobile portrait: rotate entire app 90deg to fake landscape */
-@media screen and (max-width: 767px) and (orientation: portrait) {
-  #root {
-    width: 100vh;
-    height: 100vw;
-    transform: rotate(90deg);
-    transform-origin: bottom left;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    overflow: hidden;
-  }
-}
-
