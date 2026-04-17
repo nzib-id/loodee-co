@@ -74,11 +74,11 @@ export class SpriteAgent {
 
   _addNameLabel() {
     const style = new TextStyle({
-      fontFamily: 'Courier New',
-      fontSize: 16,
-      fontWeight: 'bold',
+      fontFamily: 'heading-font, Courier New, monospace',
+      fontSize: 14,
+      fontWeight: 'normal',
       fill: '#ffffff',
-      letterSpacing: 1,
+      letterSpacing: 2,
       stroke: { color: '#000000', width: 3 },
     })
     const label = new Text({ text: this.name, style })

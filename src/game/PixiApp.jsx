@@ -70,6 +70,9 @@ export default function PixiApp({ className = '' }) {
       await new Promise(r => requestAnimationFrame(r))
       if (cancelled) return
 
+      // Preload custom fonts so Pixi can use them in canvas
+      await document.fonts.load('14px heading-font')
+
       const w = canvasRef.current.offsetWidth || 640
       const h = canvasRef.current.offsetHeight || 448
 
