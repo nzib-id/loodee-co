@@ -75,8 +75,10 @@ export default function PixiApp({ className = '' }) {
       // Preload custom fonts so Pixi can use them in canvas
       await document.fonts.load('14px heading-font')
 
-      const w = canvasRef.current.offsetWidth || 640
-      const h = canvasRef.current.offsetHeight || 448
+      // Wait extra frame so CSS is applied (important for mobile landscape)
+      await new Promise(r => requestAnimationFrame(r))
+      const w = canvasRef.current.offsetWidth || window.innerWidth || 640
+      const h = canvasRef.current.offsetHeight || window.innerHeight || 448
 
       const app = new Application()
       await app.init({
@@ -167,12 +169,16 @@ export default function PixiApp({ className = '' }) {
           Death: soldierDeath,
           Hurt: soldierHurt,
         },
-        scale: 2.8,
+        scale: soldierScale,
         animationSpeed: 0.13,
       })
       await loodee.load()
       loodee.playAnim('Walk')
-      const loodeeStartX = app.screen.width * 0.15
+      // Scale down sprites on narrow screens
+      const isMobileNarrow = app.screen.width < 500
+      const soldierScale = isMobileNarrow ? 1.8 : 2.8
+      const orcScale = isMobileNarrow ? 1.6 : 2.5
+      const loodeeStartX = app.screen.width * 0.10
       loodee.setPosition(loodeeStartX, floorY)
       app.stage.addChild(loodee.container)
       agentsRef.current.push(loodee)
@@ -187,12 +193,12 @@ export default function PixiApp({ className = '' }) {
           Death: orcDeath,
           Hurt: orcHurt,
         },
-        scale: 2.5,
+        scale: orcScale,
         animationSpeed: 0.1,
       })
       await codebot.load()
       codebot.playAnim('Walk')
-      const codebotStartX = app.screen.width * 0.55
+      const codebotStartX = app.screen.width * 0.40
       codebot.setPosition(codebotStartX, floorY)
       app.stage.addChild(codebot.container)
       agentsRef.current.push(codebot)
@@ -207,12 +213,12 @@ export default function PixiApp({ className = '' }) {
           Death: orcDeath,
           Hurt: orcHurt,
         },
-        scale: 2.5,
+        scale: orcScale,
         animationSpeed: 0.09,
       })
       await researchbot.load()
       researchbot.playAnim('Walk')
-      const researchbotStartX = app.screen.width * 0.70
+      const researchbotStartX = app.screen.width * 0.62
       researchbot.setPosition(researchbotStartX, floorY)
       app.stage.addChild(researchbot.container)
       agentsRef.current.push(researchbot)
@@ -227,12 +233,12 @@ export default function PixiApp({ className = '' }) {
           Death: orcDeath,
           Hurt: orcHurt,
         },
-        scale: 2.5,
+        scale: orcScale,
         animationSpeed: 0.11,
       })
       await creativebot.load()
       creativebot.playAnim('Walk')
-      const creativebotStartX = app.screen.width * 0.85
+      const creativebotStartX = app.screen.width * 0.82
       creativebot.setPosition(creativebotStartX, floorY)
       app.stage.addChild(creativebot.container)
       agentsRef.current.push(creativebot)
@@ -249,9 +255,9 @@ export default function PixiApp({ className = '' }) {
 
       // Walk cycles config
       const walkers = [
-        { agent: codebot,     x: codebotStartX,    dir: -1, speed: 0.6,  minX: app.screen.width * 0.45, maxX: app.screen.width * 0.62 },
-        { agent: researchbot, x: researchbotStartX, dir:  1, speed: 0.5,  minX: app.screen.width * 0.62, maxX: app.screen.width * 0.78 },
-        { agent: creativebot, x: creativebotStartX, dir: -1, speed: 0.7,  minX: app.screen.width * 0.78, maxX: app.screen.width * 0.93 },
+        { agent: codebot,     x: codebotStartX,    dir: -1, speed: 0.6,  minX: app.screen.width * 0.33, maxX: app.screen.width * 0.50 },
+        { agent: researchbot, x: researchbotStartX, dir:  1, speed: 0.5,  minX: app.screen.width * 0.55, maxX: app.screen.width * 0.72 },
+        { agent: creativebot, x: creativebotStartX, dir: -1, speed: 0.7,  minX: app.screen.width * 0.75, maxX: app.screen.width * 0.93 },
       ]
 
       app.ticker.add(() => {
