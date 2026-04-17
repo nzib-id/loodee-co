@@ -92,6 +92,16 @@ export default function PixiApp({ className = '' }) {
       if (cancelled) { app.destroy(); return }
       appRef.current = app
 
+      // Mountain background — behind everything
+      const mountainTexture = await Assets.load('/assets/mountain.png')
+      mountainTexture.source.scaleMode = 'nearest'
+      const mountainSprite = new Sprite(mountainTexture)
+      const mtScale = app.screen.width / mountainTexture.width
+      mountainSprite.scale.set(mtScale)
+      mountainSprite.x = 0
+      mountainSprite.y = app.screen.height - mountainSprite.height * mtScale - (GROUND_ROWS * TILE_SIZE) + 10
+      app.stage.addChild(mountainSprite)
+
       // Build tilemap: bgLayer (grass) added behind sprites, fgLayer (dirt) added after
       const { groundY, fgLayer } = await buildTilemap(app)
 
