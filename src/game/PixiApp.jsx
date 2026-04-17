@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Application, Container, Graphics, Sprite, Texture, Rectangle } from 'pixi.js'
+import { Application, Assets, Container, Sprite, Texture, Rectangle } from 'pixi.js'
 import { SpriteAgent } from './SpriteAgent.js'
 
 import soldierIdle from '../../assets/sprites/Soldier/Soldier/Soldier-Idle.png'
@@ -22,7 +22,7 @@ async function buildTilemap(app) {
   const screenH = app.screen.height
   const cols = Math.ceil(screenW / TILE_SIZE) + 2
 
-  const tilesetTexture = await Texture.fromURL('/assets/tileset.png')
+  const tilesetTexture = await Assets.load('/assets/tileset.png')
   tilesetTexture.source.scaleMode = 'nearest'
 
   // Slice tiles from sprite sheet
