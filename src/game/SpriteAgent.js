@@ -61,12 +61,11 @@ export class SpriteAgent {
     const anim = new AnimatedSprite(this.textures[animName])
     anim.animationSpeed = this.animationSpeed
     anim.loop = animName !== 'Death'
-    // Anchor at center-bottom of frame
-    anim.anchor.set(0.5, 1)
+    // anchor center-top, offset Y so feet (pixel 56/100) align to container origin
+    anim.anchor.set(0.5, 0)
     anim.scale.set(this.scale)
-    // Character feet are at ~56% of frame height (not 100%)
-    // transparent bottom = 43% → offset up so visual feet = anchor point
-    anim.y = -SPRITE_FRAME_SIZE * this.scale * 0.43
+    // feet are at pixel row 56 out of 100 → offset sprite up so feet = y:0 in container
+    anim.y = -56 * this.scale
     anim.play()
 
     this.currentAnim = anim

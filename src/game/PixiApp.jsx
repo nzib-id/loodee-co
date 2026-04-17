@@ -88,8 +88,8 @@ export default function PixiApp({ className = '' }) {
       // Build tilemap, returns groundY (top of grass row)
       const groundY = await buildTilemap(app)
 
-      // floorY = top of grass row = where feet should be
-      const floorY = groundY + 8  // slight sink into grass top
+      // floorY = where character feet should touch
+      const floorY = groundY + 10  // slight sink into grass
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
