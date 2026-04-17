@@ -107,9 +107,11 @@ export default function PixiApp({ className = '' }) {
       // Trees — in front of mountain, behind sprites
       const treesTexture = await Assets.load('/assets/trees.png')
       treesTexture.source.scaleMode = 'nearest'
-      const TREE_W = 54
-      const TREE_H = 52
       const TREE_SCALE = 2.5
+      const treeDefs = [
+        { x: 0,  w: 47, h: 52 }, // tree 0
+        { x: 47, w: 55, h: 37 }, // tree 1
+      ]
       const treePositions = [
         { x: 0.04, treeIdx: 0 },
         { x: 0.14, treeIdx: 1 },
@@ -120,9 +122,10 @@ export default function PixiApp({ className = '' }) {
       ]
       const treeGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE
       for (const { x, treeIdx } of treePositions) {
+        const def = treeDefs[treeIdx]
         const treeTex = new Texture({
           source: treesTexture.source,
-          frame: new Rectangle(treeIdx * TREE_W, 0, TREE_W, TREE_H),
+          frame: new Rectangle(def.x, 0, def.w, def.h),
         })
         const treeSprite = new Sprite(treeTex)
         treeSprite.scale.set(TREE_SCALE)
