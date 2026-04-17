@@ -288,6 +288,25 @@ export default function PixiApp({ className = '' }) {
     }
   }, [])
 
+  // Re-init PixiJS on orientation change (mobile landscape/portrait swap)
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      // Wait for browser to finish rotating before re-reading dimensions
+      setTimeout(() => {
+        agentsRef.current.forEach(a => a.destroy())
+        agentsRef.current = []
+        if (appRef.current) {
+          appRef.current.destroy(false)
+          appRef.current = null
+        }
+        // Force React to re-run init by toggling a key — we do it via a custom event
+        window.dispatchEvent(new Event('pixi-reinit'))
+      }, 300)
+    }
+    window.addEventListener('orientationchange', handleOrientationChange)
+    return () => window.removeEventListener('orientationchange', handleOrientationChange)
+  }, [])
+
   return (
     <canvas
       ref={canvasRef}

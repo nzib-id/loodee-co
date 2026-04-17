@@ -27,9 +27,13 @@ export default function App() {
     () => window.innerWidth > window.innerHeight && window.innerWidth < 1024
   )
   const [panelOpen, setPanelOpen] = useState(false)
+  const [pixiKey, setPixiKey] = useState(0)
 
   useEffect(() => {
     initSocket()
+    const onReinit = () => setPixiKey(k => k + 1)
+    window.addEventListener('pixi-reinit', onReinit)
+    return () => window.removeEventListener('pixi-reinit', onReinit)
   }, [])
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function App() {
           <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
             <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>MAP: DUNGEON_01 — SECTOR 4</span>
           </div>
-          <PixiApp className="w-full h-full" />
+          <PixiApp key={pixiKey} className="w-full h-full" />
         </div>
 
         {/* Toggle button */}
@@ -127,7 +131,7 @@ export default function App() {
           </span>
         </div>
 
-        <PixiApp className="w-full h-full" />
+        <PixiApp key={pixiKey} className="w-full h-full" />
       </div>
 
       {/* Panels — always visible below canvas */}
