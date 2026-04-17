@@ -104,6 +104,34 @@ export default function PixiApp({ className = '' }) {
       mountainSprite.y = groundTopY - mountainTexture.height * mtScale + 200
       app.stage.addChild(mountainSprite)
 
+      // Trees — in front of mountain, behind sprites
+      const treesTexture = await Assets.load('/assets/trees.png')
+      treesTexture.source.scaleMode = 'nearest'
+      const TREE_W = 54
+      const TREE_H = 52
+      const TREE_SCALE = 2.5
+      const treePositions = [
+        { x: 0.04, treeIdx: 0 },
+        { x: 0.14, treeIdx: 1 },
+        { x: 0.30, treeIdx: 0 },
+        { x: 0.55, treeIdx: 1 },
+        { x: 0.72, treeIdx: 0 },
+        { x: 0.88, treeIdx: 1 },
+      ]
+      const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
+      for (const { x, treeIdx } of treePositions) {
+        const treeTex = new Texture({
+          source: treesTexture.source,
+          frame: new Rectangle(treeIdx * TREE_W, 0, TREE_W, TREE_H),
+        })
+        const treeSprite = new Sprite(treeTex)
+        treeSprite.scale.set(TREE_SCALE)
+        treeSprite.anchor.set(0.5, 1)
+        treeSprite.x = app.screen.width * x
+        treeSprite.y = groundTopY + 8
+        app.stage.addChild(treeSprite)
+      }
+
       // Build tilemap: bgLayer (grass) added behind sprites, fgLayer (dirt) added after
       const { groundY, fgLayer } = await buildTilemap(app)
 
