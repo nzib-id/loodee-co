@@ -81,7 +81,8 @@ export default function PixiApp({ className = '' }) {
       if (!canvasRef.current || cancelled) return
       const w = canvasRef.current.offsetWidth || window.innerWidth || 640
       const h = canvasRef.current.offsetHeight || window.innerHeight || 448
-      const GROUND_ROWS = w > h ? GROUND_ROWS_LANDSCAPE : GROUND_ROWS_PORTRAIT
+      const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
+      const GROUND_ROWS = isMobileLandscape ? GROUND_ROWS_LANDSCAPE : GROUND_ROWS_PORTRAIT
 
       const app = new Application()
       await app.init({
