@@ -116,6 +116,7 @@ export default function PixiApp({ className = '' }) {
       bush3Tex.source.scaleMode = 'nearest'
       const BUSH_SCALE = 3
       const bushTextures = [bush1Tex, bush2Tex, bush3Tex]
+      // landscapeOffset applied later to groundContainer
       const bushGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE + 48
       // Fill full width with bushes, spacing ~40px, random pick from 3 types
       const bushSpacing = 40
@@ -127,7 +128,7 @@ export default function PixiApp({ className = '' }) {
         bushSprite.anchor.set(0.5, 1)
         bushSprite.x = i * bushSpacing
         bushSprite.y = bushGroundY
-        app.stage.addChild(bushSprite)
+        groundContainer.addChild(bushSprite)
       }
 
       // Trees — in front of mountain, behind sprites
@@ -145,13 +146,14 @@ export default function PixiApp({ className = '' }) {
         { x: 0.88, tex: tree2Tex },
       ]
       const treeGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE + 48
+      const groundContainer = new Container()
       for (const { x, tex } of treePositions) {
         const treeSprite = new Sprite(tex)
         treeSprite.scale.set(TREE_SCALE)
         treeSprite.anchor.set(0.5, 1)
         treeSprite.x = app.screen.width * x
         treeSprite.y = treeGroundY
-        app.stage.addChild(treeSprite)
+        groundContainer.addChild(treeSprite)
       }
 
       // Build tilemap: bgLayer (grass) added behind sprites, fgLayer (dirt) added after
@@ -161,8 +163,9 @@ export default function PixiApp({ className = '' }) {
       const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
       const landscapeOffset = isMobileLandscape ? 60 : 0
       const floorY = groundY + 45 + landscapeOffset
-      // Shift entire ground layer down on mobile landscape
-      fgLayer.y += landscapeOffset
+      // Add bush+tree container to stage (behind sprites)
+      groundContainer.y = landscapeOffset
+      app.stage.addChild(groundContainer)
 
       // Loodee — Soldier
       const loodee = new SpriteAgent({
@@ -245,6 +248,8 @@ export default function PixiApp({ className = '' }) {
       agentsRef.current.push(creativebot)
 
       // Dirt layer on top of sprites — gives depth effect (sprites behind dirt)
+      // fgLayer (dirt) on top of sprites for depth effect
+      fgLayer.y = landscapeOffset
       app.stage.addChild(fgLayer)
 
       // Walk cycle for Loodee
