@@ -102,9 +102,11 @@ export default function PixiApp({ className = '' }) {
       const mtScale = app.screen.width / mountainTexture.width
       mountainSprite.scale.set(mtScale)
       mountainSprite.x = 0
+      const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
+      const landscapeOffset = isMobileLandscape ? 60 : 0
       // Snap mountain bottom — overlap with ground a bit
       const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
-      mountainSprite.y = groundTopY - mountainTexture.height * mtScale + 200
+      mountainSprite.y = groundTopY - mountainTexture.height * mtScale + 200 + landscapeOffset
       app.stage.addChild(mountainSprite)
 
       // Bushes — behind trees
@@ -126,7 +128,7 @@ export default function PixiApp({ className = '' }) {
         bushSprite.scale.set(BUSH_SCALE)
         bushSprite.anchor.set(0.5, 1)
         bushSprite.x = i * bushSpacing
-        bushSprite.y = bushGroundY
+        bushSprite.y = bushGroundY + landscapeOffset
         app.stage.addChild(bushSprite)
       }
 
@@ -150,7 +152,7 @@ export default function PixiApp({ className = '' }) {
         treeSprite.scale.set(TREE_SCALE)
         treeSprite.anchor.set(0.5, 1)
         treeSprite.x = app.screen.width * x
-        treeSprite.y = treeGroundY
+        treeSprite.y = treeGroundY + landscapeOffset
         app.stage.addChild(treeSprite)
       }
 
@@ -158,10 +160,7 @@ export default function PixiApp({ className = '' }) {
       const { groundY, fgLayer } = await buildTilemap(app)
 
       // floorY = where character feet should touch
-      const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
-      const landscapeOffset = isMobileLandscape ? 60 : 0
       const floorY = groundY + 45 + landscapeOffset
-      // Shift entire ground layer down on mobile landscape
       fgLayer.y += landscapeOffset
 
       // Loodee — Soldier
