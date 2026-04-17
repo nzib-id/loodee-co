@@ -143,9 +143,7 @@ export default function PixiApp({ className = '' }) {
         posX += speed * dir
         if (posX > maxX || posX < minX) {
           dir *= -1
-          loodee.container.scale.x = dir < 0
-            ? -Math.abs(loodee.container.scale.x)
-            : Math.abs(loodee.container.scale.x)
+          loodee.setFlip(dir < 0)
         }
         loodee.container.x = posX
       })

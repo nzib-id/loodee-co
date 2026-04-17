@@ -83,15 +83,24 @@ export class SpriteAgent {
     })
     const label = new Text({ text: this.name, style })
     label.anchor.set(0.5, 1)  // anchor bottom-center
-    // Position above head: sprite head is around y = -56*scale + topPx*scale
-    // topPx ≈ 39, so head ≈ -(56-39)*scale = -17*scale above container origin
-    label.y = -56 * this.scale - 8  // 8px gap above head
+    // Head is at ~(56-39)*scale = 17*scale above container origin
+    label.y = -17 * this.scale - 8  // just above head
+    this.nameLabel = label
     this.container.addChild(label)
   }
 
   setPosition(x, y) {
     this.container.x = x
     this.container.y = y
+  }
+
+  setFlip(flipped) {
+    const s = Math.abs(this.container.scale.x)
+    this.container.scale.x = flipped ? -s : s
+    // Counter-flip the label so text stays readable
+    if (this.nameLabel) {
+      this.nameLabel.scale.x = flipped ? -1 : 1
+    }
   }
 
   destroy() {
