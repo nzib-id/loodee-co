@@ -110,7 +110,7 @@ export default function PixiApp({ className = '' }) {
       const TREE_SCALE = 2.5
       const treeDefs = [
         { x: 0,  w: 47, h: 52, yOffset: 48 }, // tree 0 — tall
-        { x: 47, w: 55, h: 37, yOffset: 10 }, // tree 1 — shorter, less offset
+        { x: 47, w: 55, h: 37, yOffset: 40 }, // tree 1 — shorter
       ]
       const treePositions = [
         { x: 0.04, treeIdx: 0 },
