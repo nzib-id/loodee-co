@@ -96,8 +96,9 @@ export default function PixiApp({ className = '' }) {
       await new Promise(r => requestAnimationFrame(r))
       if (!canvasRef.current || cancelled) return
       const isMobile = Math.min(window.screen.width, window.screen.height) < 768
-      const w = isMobile ? WORLD_W : (canvasRef.current.offsetWidth || window.innerWidth || 1280)
-      const h = isMobile ? WORLD_H : (canvasRef.current.offsetHeight || window.innerHeight || 480)
+      // Desktop: canvas fills container. Mobile: fixed world size + CSS scale
+      const w = isMobile ? WORLD_W : (wrapperRef.current.offsetWidth || window.innerWidth || 1280)
+      const h = isMobile ? WORLD_H : (wrapperRef.current.offsetHeight || window.innerHeight || 480)
 
       const app = new Application()
       await app.init({
@@ -106,8 +107,8 @@ export default function PixiApp({ className = '' }) {
         height: h,
         background: 0x4d9be6,
         antialias: false,
-        resolution: isMobile ? 1 : (window.devicePixelRatio || 1),
-        autoDensity: !isMobile,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
       })
       if (isMobile) applyScale()
 
@@ -408,7 +409,7 @@ export default function PixiApp({ className = '' }) {
   }, [])
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`relative overflow-hidden ${className}`} style={{ width: '100%', height: '100%' }}>
       <div
         ref={wrapperRef}
         style={{ position: 'absolute', width: WORLD_W, height: WORLD_H }}
