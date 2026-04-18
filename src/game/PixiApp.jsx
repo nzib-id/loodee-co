@@ -74,19 +74,35 @@ export default function PixiApp({ className = '' }) {
       // Extra frame so browser reflow is done (critical after orientation change)
       await new Promise(r => requestAnimationFrame(r))
       if (!canvasRef.current || cancelled) return
-      const w = canvasRef.current.offsetWidth || window.innerWidth || 640
-      const h = canvasRef.current.offsetHeight || window.innerHeight || 448
+      // World size always fixed (desktop size)
+      const WORLD_W = 1280
+      const WORLD_H = 480
+
+      const screenW = canvasRef.current.offsetWidth || window.innerWidth || 640
+      const screenH = canvasRef.current.offsetHeight || window.innerHeight || 448
 
       const app = new Application()
       await app.init({
         canvas: canvasRef.current,
-        width: w,
-        height: h,
+        width: screenW,
+        height: screenH,
         background: 0x4d9be6,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
       })
+
+      // Scale stage so world fits screen, then allow pinch zoom in
+      const fitScale = Math.min(screenW / WORLD_W, screenH / WORLD_H)
+      app.stage.scale.set(fitScale)
+      // Center world horizontally
+      app.stage.x = (screenW - WORLD_W * fitScale) / 2
+      app.stage.y = 0
+      zoomRef.current = { scale: fitScale, pinchDist: null, fitScale }
+
+      // Use world dimensions for all layout calculations
+      const w = WORLD_W
+      const h = WORLD_H
 
       if (cancelled) { app.destroy(); return }
       appRef.current = app
@@ -337,7 +353,7 @@ export default function PixiApp({ className = '' }) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const MIN_SCALE = 1  // can't zoom out smaller than native size
+    const MIN_SCALE = zoomRef.current.fitScale ?? 1  // can't zoom out smaller than fit-to-screen
     const MAX_SCALE = 3
 
     function getDist(t1, t2) {
