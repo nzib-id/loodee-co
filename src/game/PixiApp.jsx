@@ -104,12 +104,10 @@ export default function PixiApp({ className = '' }) {
       mountainSprite.x = 0
       const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
       const landscapeOffset = isMobileLandscape ? 80 : 0
-      // Snap mountain bottom — overlap with ground a bit
+      // Snap mountain so bottom edge sits on top of grass row
       const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
       const mtH = mountainTexture.height * mtScale
-      const mtY = groundTopY - mtH + 200 + landscapeOffset
-      // Clamp so mountain is always visible (min y = 0)
-      mountainSprite.y = Math.max(0, mtY)
+      mountainSprite.y = groundTopY - mtH + landscapeOffset
       app.stage.addChild(mountainSprite)
 
       // Bushes — behind trees
