@@ -54,11 +54,32 @@ async function buildTilemap(app) {
   return { groundY, fgLayer }
 }
 
+const WORLD_W = 1280
+const WORLD_H = 480
+
 export default function PixiApp({ className = '' }) {
+  const wrapperRef = useRef(null)
   const canvasRef = useRef(null)
   const appRef = useRef(null)
   const agentsRef = useRef([])
+  const scaleRef = useRef(1)
 
+  // Apply CSS scale so fixed world fits the container
+  const applyScale = (extraScale = 1) => {
+    if (!wrapperRef.current) return
+    const container = wrapperRef.current.parentElement
+    if (!container) return
+    const sw = container.offsetWidth
+    const sh = container.offsetHeight
+    const fitScale = Math.min(sw / WORLD_W, sh / WORLD_H)
+    const s = fitScale * extraScale
+    scaleRef.current = s
+    wrapperRef.current.style.transform = `scale(${s})`
+    wrapperRef.current.style.transformOrigin = 'top left'
+    // Center the scaled world
+    wrapperRef.current.style.left = `${(sw - WORLD_W * s) / 2}px`
+    wrapperRef.current.style.top = `${(sh - WORLD_H * s) / 2}px`
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -74,8 +95,8 @@ export default function PixiApp({ className = '' }) {
       // Extra frame so browser reflow is done (critical after orientation change)
       await new Promise(r => requestAnimationFrame(r))
       if (!canvasRef.current || cancelled) return
-      const w = canvasRef.current.offsetWidth || window.innerWidth || 640
-      const h = canvasRef.current.offsetHeight || window.innerHeight || 448
+      const w = WORLD_W
+      const h = WORLD_H
 
       const app = new Application()
       await app.init({
@@ -84,9 +105,10 @@ export default function PixiApp({ className = '' }) {
         height: h,
         background: 0x4d9be6,
         antialias: false,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
+        resolution: 1,
+        autoDensity: false,
       })
+      applyScale()
 
 
       if (cancelled) { app.destroy(); return }
@@ -99,8 +121,7 @@ export default function PixiApp({ className = '' }) {
       const mtScale = app.screen.width / mountainTexture.width
       mountainSprite.scale.set(mtScale)
       mountainSprite.x = 0
-      const isMobileLandscape = w > h && Math.min(window.screen.width, window.screen.height) < 768
-      const landscapeOffset = isMobileLandscape ? 80 : 0
+      const landscapeOffset = 0
       // Snap mountain so bottom edge sits on top of grass row
       const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
       const mtH = mountainTexture.height * mtScale
@@ -159,7 +180,6 @@ export default function PixiApp({ className = '' }) {
 
       // floorY = where character feet should touch
       const floorY = groundY + 45 + landscapeOffset
-      fgLayer.y += landscapeOffset
 
       const charSprites = { Idle: charIdle, Walk: charWalk, Drag: charDrag, Fall: charFall }
 
@@ -333,12 +353,71 @@ export default function PixiApp({ className = '' }) {
     return () => window.removeEventListener('orientationchange', handleOrientationChange)
   }, [])
 
+  // Resize handler — reapply scale when container resizes
+  useEffect(() => {
+    const onResize = () => applyScale()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Pinch zoom
+  useEffect(() => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    const container = wrapper.parentElement
+    if (!container) return
+
+    const MAX_EXTRA = 3
+    let extraScale = 1
+    let pinchDist = null
+
+    const getDist = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX
+      const dy = t1.clientY - t2.clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    }
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) pinchDist = getDist(e.touches[0], e.touches[1])
+    }
+
+    const onTouchMove = (e) => {
+      if (e.touches.length !== 2 || !pinchDist) return
+      e.preventDefault()
+      const newDist = getDist(e.touches[0], e.touches[1])
+      extraScale = Math.min(MAX_EXTRA, Math.max(1, extraScale * (newDist / pinchDist)))
+      pinchDist = newDist
+      applyScale(extraScale)
+    }
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) pinchDist = null
+    }
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchmove', onTouchMove, { passive: false })
+    container.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [])
+
   return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block ${className}`}
-      style={{ imageRendering: 'pixelated' }}
-    />
+    <div className={`relative overflow-hidden ${className}`}>
+      <div
+        ref={wrapperRef}
+        style={{ position: 'absolute', width: WORLD_W, height: WORLD_H }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={WORLD_W}
+          height={WORLD_H}
+          style={{ imageRendering: 'pixelated', display: 'block' }}
+        />
+      </div>
+    </div>
   )
 }
 
