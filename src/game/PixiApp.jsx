@@ -58,7 +58,6 @@ export default function PixiApp({ className = '' }) {
   const canvasRef = useRef(null)
   const appRef = useRef(null)
   const agentsRef = useRef([])
-  const zoomRef = useRef({ scale: 1, x: 0, y: 0, pinchDist: null })
 
   useEffect(() => {
     let cancelled = false
@@ -330,71 +329,6 @@ export default function PixiApp({ className = '' }) {
     }
     window.addEventListener('orientationchange', handleOrientationChange)
     return () => window.removeEventListener('orientationchange', handleOrientationChange)
-  }, [])
-
-  // Pinch zoom handler
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const MIN_SCALE = 0.5
-    const MAX_SCALE = 3
-
-    function getDist(t1, t2) {
-      const dx = t1.clientX - t2.clientX
-      const dy = t1.clientY - t2.clientY
-      return Math.sqrt(dx * dx + dy * dy)
-    }
-
-    function onTouchStart(e) {
-      if (e.touches.length === 2) {
-        zoomRef.current.pinchDist = getDist(e.touches[0], e.touches[1])
-      }
-    }
-
-    function onTouchMove(e) {
-      const app = appRef.current
-      if (!app || e.touches.length !== 2) return
-      e.preventDefault()
-
-      const newDist = getDist(e.touches[0], e.touches[1])
-      const { pinchDist } = zoomRef.current
-      if (!pinchDist) return
-
-      const ratio = newDist / pinchDist
-      const z = zoomRef.current
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, z.scale * ratio))
-
-      // Zoom toward pinch midpoint
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
-      const rect = canvas.getBoundingClientRect()
-      const cx = midX - rect.left
-      const cy = midY - rect.top
-
-      app.stage.x = cx - (cx - app.stage.x) * (newScale / z.scale)
-      app.stage.y = cy - (cy - app.stage.y) * (newScale / z.scale)
-      app.stage.scale.set(newScale)
-
-      z.scale = newScale
-      zoomRef.current.pinchDist = newDist
-    }
-
-    function onTouchEnd(e) {
-      if (e.touches.length < 2) {
-        zoomRef.current.pinchDist = null
-      }
-    }
-
-    canvas.addEventListener('touchstart', onTouchStart, { passive: true })
-    canvas.addEventListener('touchmove', onTouchMove, { passive: false })
-    canvas.addEventListener('touchend', onTouchEnd, { passive: true })
-
-    return () => {
-      canvas.removeEventListener('touchstart', onTouchStart)
-      canvas.removeEventListener('touchmove', onTouchMove)
-      canvas.removeEventListener('touchend', onTouchEnd)
-    }
   }, [])
 
   return (
