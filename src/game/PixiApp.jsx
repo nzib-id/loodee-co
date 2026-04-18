@@ -58,7 +58,7 @@ export default function PixiApp({ className = '' }) {
   const canvasRef = useRef(null)
   const appRef = useRef(null)
   const agentsRef = useRef([])
-  const zoomRef = useRef({ scale: 1, x: 0, y: 0, pinchDist: null })
+
 
   useEffect(() => {
     let cancelled = false
@@ -74,35 +74,20 @@ export default function PixiApp({ className = '' }) {
       // Extra frame so browser reflow is done (critical after orientation change)
       await new Promise(r => requestAnimationFrame(r))
       if (!canvasRef.current || cancelled) return
-      // World size always fixed (desktop size)
-      const WORLD_W = 1280
-      const WORLD_H = 480
-
-      const screenW = canvasRef.current.offsetWidth || window.innerWidth || 640
-      const screenH = canvasRef.current.offsetHeight || window.innerHeight || 448
+      const w = canvasRef.current.offsetWidth || window.innerWidth || 640
+      const h = canvasRef.current.offsetHeight || window.innerHeight || 448
 
       const app = new Application()
       await app.init({
         canvas: canvasRef.current,
-        width: screenW,
-        height: screenH,
+        width: w,
+        height: h,
         background: 0x4d9be6,
         antialias: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
       })
 
-      // Scale stage so world fits screen, then allow pinch zoom in
-      const fitScale = Math.min(screenW / WORLD_W, screenH / WORLD_H)
-      app.stage.scale.set(fitScale)
-      // Center world horizontally
-      app.stage.x = (screenW - WORLD_W * fitScale) / 2
-      app.stage.y = 0
-      zoomRef.current = { scale: fitScale, pinchDist: null, fitScale }
-
-      // Use world dimensions for all layout calculations
-      const w = WORLD_W
-      const h = WORLD_H
 
       if (cancelled) { app.destroy(); return }
       appRef.current = app
@@ -346,71 +331,6 @@ export default function PixiApp({ className = '' }) {
     }
     window.addEventListener('orientationchange', handleOrientationChange)
     return () => window.removeEventListener('orientationchange', handleOrientationChange)
-  }, [])
-
-  // Pinch zoom handler
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const MIN_SCALE = zoomRef.current.fitScale ?? 1  // can't zoom out smaller than fit-to-screen
-    const MAX_SCALE = 3
-
-    function getDist(t1, t2) {
-      const dx = t1.clientX - t2.clientX
-      const dy = t1.clientY - t2.clientY
-      return Math.sqrt(dx * dx + dy * dy)
-    }
-
-    function onTouchStart(e) {
-      if (e.touches.length === 2) {
-        zoomRef.current.pinchDist = getDist(e.touches[0], e.touches[1])
-      }
-    }
-
-    function onTouchMove(e) {
-      const app = appRef.current
-      if (!app || e.touches.length !== 2) return
-      e.preventDefault()
-
-      const newDist = getDist(e.touches[0], e.touches[1])
-      const { pinchDist } = zoomRef.current
-      if (!pinchDist) return
-
-      const ratio = newDist / pinchDist
-      const z = zoomRef.current
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, z.scale * ratio))
-
-      // Zoom toward pinch midpoint
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
-      const rect = canvas.getBoundingClientRect()
-      const cx = midX - rect.left
-      const cy = midY - rect.top
-
-      app.stage.x = cx - (cx - app.stage.x) * (newScale / z.scale)
-      app.stage.y = cy - (cy - app.stage.y) * (newScale / z.scale)
-      app.stage.scale.set(newScale)
-
-      z.scale = newScale
-      zoomRef.current.pinchDist = newDist
-    }
-
-    function onTouchEnd(e) {
-      if (e.touches.length < 2) {
-        zoomRef.current.pinchDist = null
-      }
-    }
-
-    canvas.addEventListener('touchstart', onTouchStart, { passive: true })
-    canvas.addEventListener('touchmove', onTouchMove, { passive: false })
-    canvas.addEventListener('touchend', onTouchEnd, { passive: true })
-
-    return () => {
-      canvas.removeEventListener('touchstart', onTouchStart)
-      canvas.removeEventListener('touchmove', onTouchMove)
-      canvas.removeEventListener('touchend', onTouchEnd)
-    }
   }, [])
 
   return (
