@@ -337,7 +337,7 @@ export default function PixiApp({ className = '' }) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const MIN_SCALE = 0.5
+    const MIN_SCALE = 1  // can't zoom out smaller than native size
     const MAX_SCALE = 3
 
     function getDist(t1, t2) {
