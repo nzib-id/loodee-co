@@ -95,8 +95,9 @@ export default function PixiApp({ className = '' }) {
       // Extra frame so browser reflow is done (critical after orientation change)
       await new Promise(r => requestAnimationFrame(r))
       if (!canvasRef.current || cancelled) return
-      const w = WORLD_W
-      const h = WORLD_H
+      const isMobile = Math.min(window.screen.width, window.screen.height) < 768
+      const w = isMobile ? WORLD_W : (canvasRef.current.offsetWidth || window.innerWidth || 1280)
+      const h = isMobile ? WORLD_H : (canvasRef.current.offsetHeight || window.innerHeight || 480)
 
       const app = new Application()
       await app.init({
@@ -105,10 +106,10 @@ export default function PixiApp({ className = '' }) {
         height: h,
         background: 0x4d9be6,
         antialias: false,
-        resolution: 1,
-        autoDensity: false,
+        resolution: isMobile ? 1 : (window.devicePixelRatio || 1),
+        autoDensity: !isMobile,
       })
-      applyScale()
+      if (isMobile) applyScale()
 
 
       if (cancelled) { app.destroy(); return }
@@ -353,8 +354,10 @@ export default function PixiApp({ className = '' }) {
     return () => window.removeEventListener('orientationchange', handleOrientationChange)
   }, [])
 
-  // Resize handler — reapply scale when container resizes
+  // Resize handler — reapply scale on mobile only
   useEffect(() => {
+    const isMobile = Math.min(window.screen.width, window.screen.height) < 768
+    if (!isMobile) return
     const onResize = () => applyScale()
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
