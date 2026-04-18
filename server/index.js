@@ -89,6 +89,51 @@ const agentState = new Map([
   ['creativebot', { id: 'creativebot', status: 'idle',   load: 0 }],
 ])
 
+// Task registry: agentId → { startedAt, ttlMs, label }
+// When a task is active and within TTL, agent is shown as active
+const taskRegistry = new Map()
+
+// POST /api/task-start — mark agent as working on a task
+// Body: { agentId, label?, ttlMs? }
+// ttlMs defaults to 30 minutes; use 0 for no auto-expire
+app.post('/api/task-start', (req, res) => {
+  const { agentId, label = 'Working...', ttlMs = 30 * 60 * 1000 } = req.body
+  if (!agentId) return res.status(400).json({ error: 'agentId required' })
+  taskRegistry.set(agentId, { startedAt: Date.now(), ttlMs, label })
+  agentState.set(agentId, { id: agentId, status: 'active', load: 75 })
+  broadcast({ type: 'agent_status', agentId, status: 'active', load: 75 })
+  broadcast({ type: 'log', agentId, agentName: agentId, msg: `Task started: ${label}`, color: '#4ade80' })
+  console.log(`[task] ${agentId} started: ${label}`)
+  res.json({ ok: true })
+})
+
+// POST /api/task-done — mark agent task as complete
+// Body: { agentId, label? }
+app.post('/api/task-done', (req, res) => {
+  const { agentId, label = 'Task complete' } = req.body
+  if (!agentId) return res.status(400).json({ error: 'agentId required' })
+  taskRegistry.delete(agentId)
+  agentState.set(agentId, { id: agentId, status: 'idle', load: 0 })
+  broadcast({ type: 'agent_status', agentId, status: 'idle', load: 0 })
+  broadcast({ type: 'log', agentId, agentName: agentId, msg: `✓ ${label}`, color: '#ffe500' })
+  console.log(`[task] ${agentId} done: ${label}`)
+  res.json({ ok: true })
+})
+
+// Auto-expire tasks that exceeded their TTL
+setInterval(() => {
+  const now = Date.now()
+  for (const [agentId, task] of taskRegistry.entries()) {
+    if (task.ttlMs > 0 && now - task.startedAt > task.ttlMs) {
+      taskRegistry.delete(agentId)
+      agentState.set(agentId, { id: agentId, status: 'idle', load: 0 })
+      broadcast({ type: 'agent_status', agentId, status: 'idle', load: 0 })
+      broadcast({ type: 'log', agentId, agentName: agentId, msg: `Task expired (TTL exceeded)`, color: '#888' })
+      console.log(`[task] ${agentId} expired`)
+    }
+  }
+}, 10000)
+
 // Read OpenClaw sessions.json and derive agent states
 function pollOpenClaw() {
   try {
@@ -131,16 +176,24 @@ function pollOpenClaw() {
     const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
 
-    // CodeBot active only when explicitly set via /api/codebot-status
-    const codebotActive = agentState.get('codebot')?.status === 'active'
-    broadcast({ type: 'agent_status', agentId: 'codebot', status: codebotActive ? 'active' : 'idle', load: codebotActive ? 55 : 0 })
+    // CodeBot: active if task registry says so, else idle
+    const codebotTask = taskRegistry.get('codebot')
+    const codebotActive = !!codebotTask
+    const codebotLoad = codebotActive ? Math.min(95, Math.round(55 + ((Date.now() - codebotTask.startedAt) / 60000) * 2)) : 0
+    broadcast({ type: 'agent_status', agentId: 'codebot', status: codebotActive ? 'active' : 'idle', load: codebotActive ? codebotLoad : 0 })
 
-    // ResearchBot & CreativeBot: use real session data if available, else idle
+    // ResearchBot & CreativeBot: task registry first, fallback to session data
     for (const id of ['researchbot', 'creativebot']) {
-      const updated = latestUpdated.get(id) ?? 0
-      const msSince = now - updated
-      const isActive = updated > 0 && msSince < ACTIVE_THRESHOLD_MS
-      broadcast({ type: 'agent_status', agentId: id, status: isActive ? 'active' : 'idle', load: isActive ? Math.round(60 - (msSince / ACTIVE_THRESHOLD_MS) * 60) : 0 })
+      const task = taskRegistry.get(id)
+      if (task) {
+        const load = Math.min(95, Math.round(55 + ((now - task.startedAt) / 60000) * 2))
+        broadcast({ type: 'agent_status', agentId: id, status: 'active', load })
+      } else {
+        const updated = latestUpdated.get(id) ?? 0
+        const msSince = now - updated
+        const isActive = updated > 0 && msSince < ACTIVE_THRESHOLD_MS
+        broadcast({ type: 'agent_status', agentId: id, status: isActive ? 'active' : 'idle', load: isActive ? Math.round(60 - (msSince / ACTIVE_THRESHOLD_MS) * 60) : 0 })
+      }
     }
 
   } catch (err) {

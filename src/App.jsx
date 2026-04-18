@@ -9,15 +9,15 @@ function LiveClock() {
     const el = document.getElementById('hq-clock')
     if (!el) return
     const tick = () => {
-      el.textContent = new Date().toLocaleTimeString('id-ID', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      el.textContent = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', hour12: true
       })
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [])
-  return <span id="hq-clock" className="text-xs tabular-nums text-white/50" />
+  return <span id="hq-clock" className="tabular-nums font-heading text-2xl" style={{ color: '#ffffff', textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000' }} />
 }
 
 function isMobileDevice() {
@@ -53,16 +53,7 @@ export default function App() {
       <div className="flex flex-col lg:flex-row h-screen w-screen overflow-hidden" style={{ background: '#292929' }}>
         <div className="relative flex-1 min-w-0 overflow-hidden scanline-overlay">
           <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
-            <div className="px-2 py-1 text-[10px] tracking-widest font-heading"
-              style={{ background: '#292929', border: '2px solid #ffe500', boxShadow: '3px 3px 0 rgba(0,0,0,1)', color: '#ffe500' }}>
-              LOODEE CO. HQ
-            </div>
             <LiveClock />
-          </div>
-          <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-            <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              MAP: DUNGEON_01 — SECTOR 4
-            </span>
           </div>
           <PixiApp key={pixiKey} className="w-full h-full" />
         </div>
@@ -80,16 +71,7 @@ export default function App() {
       {/* Canvas — always fullscreen on mobile */}
       <div className="absolute inset-0 scanline-overlay">
         <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
-          <div className="px-2 py-1 text-[10px] tracking-widest font-heading"
-            style={{ background: '#292929', border: '2px solid #ffe500', boxShadow: '3px 3px 0 rgba(0,0,0,1)', color: '#ffe500' }}>
-            LOODEE CO. HQ
-          </div>
           <LiveClock />
-        </div>
-        <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-          <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            MAP: DUNGEON_01 — SECTOR 4
-          </span>
         </div>
         <PixiApp key={pixiKey} className="w-full h-full" />
       </div>

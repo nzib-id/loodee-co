@@ -8,12 +8,12 @@ const initialAgents = [
     model: 'claude-sonnet-4-6',
     status: 'offline',
     load: 0,
-    color: '#7c6af7',
+    color: '#ffe500',
     sprite: 'soldier',
   },
   {
     id: 'codebot',
-    name: 'CodeBot',
+    name: 'Kobo',
     role: 'Engineering',
     model: 'claude-sonnet-4-6',
     status: 'offline',
@@ -23,7 +23,7 @@ const initialAgents = [
   },
   {
     id: 'researchbot',
-    name: 'ResearchBot',
+    name: 'Rebo',
     role: 'Intelligence',
     model: 'qwen2.5:7b',
     status: 'offline',
@@ -33,7 +33,7 @@ const initialAgents = [
   },
   {
     id: 'creativebot',
-    name: 'CreativeBot',
+    name: 'Krebo',
     role: 'Creative',
     model: 'claude-sonnet-4-6',
     status: 'offline',

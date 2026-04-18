@@ -35,14 +35,18 @@ function AgentCard({ agent, selected, onClick }) {
 
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 flex items-center justify-center text-xl shrink-0"
+          className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden"
           style={{
-            background: `${agent.color}22`,
-            border: `2px solid ${agent.color}44`,
+            background: agent.color,
+            border: `2px solid ${agent.color}`,
             borderRadius: 0,
           }}
         >
-          {ROLE_ICON[agent.role] ?? '?'}
+          <img
+            src="/assets/pfp1.png"
+            alt="avatar"
+            style={{ imageRendering: 'pixelated', width: '100%', height: '100%', objectFit: 'contain' }}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div

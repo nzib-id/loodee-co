@@ -2,16 +2,10 @@ import { useEffect, useRef } from 'react'
 import { Application, Assets, Container, Sprite, Texture, Rectangle } from 'pixi.js'
 import { SpriteAgent } from './SpriteAgent.js'
 
-import soldierIdle from '../../assets/sprites/Soldier/Soldier/Soldier-Idle.png'
-import soldierWalk from '../../assets/sprites/Soldier/Soldier/Soldier-Walk.png'
-import soldierAttack01 from '../../assets/sprites/Soldier/Soldier/Soldier-Attack01.png'
-import soldierDeath from '../../assets/sprites/Soldier/Soldier/Soldier-Death.png'
-import soldierHurt from '../../assets/sprites/Soldier/Soldier/Soldier-Hurt.png'
-import orcIdle from '../../assets/sprites/Orc/Orc/Orc-Idle.png'
-import orcWalk from '../../assets/sprites/Orc/Orc/Orc-Walk.png'
-import orcAttack01 from '../../assets/sprites/Orc/Orc/Orc-Attack01.png'
-import orcDeath from '../../assets/sprites/Orc/Orc/Orc-Death.png'
-import orcHurt from '../../assets/sprites/Orc/Orc/Orc-Hurt.png'
+import charIdle from '../../assets/sprites/Character/character-idle.png'
+import charWalk from '../../assets/sprites/Character/character-walk.png'
+import charDrag from '../../assets/sprites/Character/character-drag.png'
+import charFall from '../../assets/sprites/Character/character-fall.png'
 
 // Tileset config
 const TILE_SRC_SIZE = 16
@@ -34,6 +28,7 @@ async function buildTilemap(app) {
 
   // Single fg container — all ground tiles render in front of sprites
   const fgLayer = new Container()
+  fgLayer.eventMode = 'none' // don't block pointer events to sprites below
   const groundY = screenH - GROUND_ROWS * TILE_SIZE
 
   for (let row = 0; row < GROUND_ROWS; row++) {
@@ -117,7 +112,7 @@ export default function PixiApp({ className = '' }) {
       bush1Tex.source.scaleMode = 'nearest'
       bush2Tex.source.scaleMode = 'nearest'
       bush3Tex.source.scaleMode = 'nearest'
-      const BUSH_SCALE = 3
+      const BUSH_SCALE = 5
       const bushTextures = [bush1Tex, bush2Tex, bush3Tex]
       const bushGroundY = app.screen.height - GROUND_ROWS * TILE_SIZE + 48
       // Fill full width with bushes, spacing ~40px, random pick from 3 types
@@ -138,7 +133,7 @@ export default function PixiApp({ className = '' }) {
       const tree2Tex = await Assets.load('/assets/tree2.png')
       tree1Tex.source.scaleMode = 'nearest'
       tree2Tex.source.scaleMode = 'nearest'
-      const TREE_SCALE = 2.5
+      const TREE_SCALE = 5
       const treePositions = [
         { x: 0.04, tex: tree1Tex },
         { x: 0.14, tex: tree2Tex },
@@ -164,80 +159,62 @@ export default function PixiApp({ className = '' }) {
       const floorY = groundY + 45 + landscapeOffset
       fgLayer.y += landscapeOffset
 
-      // Loodee — Soldier
+      const charSprites = { Idle: charIdle, Walk: charWalk, Drag: charDrag, Fall: charFall }
+
+      // Loodee
       const loodee = new SpriteAgent({
         name: 'Loodee',
-        spritePaths: {
-          Idle: soldierIdle,
-          Walk: soldierWalk,
-          Attack01: soldierAttack01,
-          Death: soldierDeath,
-          Hurt: soldierHurt,
-        },
-        scale: 2.8,
+        spritePaths: charSprites,
+        scale: 4,
         animationSpeed: 0.13,
       })
       await loodee.load()
+      loodee.enableDrag(app, floorY)
       loodee.playAnim('Walk')
       const loodeeStartX = app.screen.width * 0.15
       loodee.setPosition(loodeeStartX, floorY)
       app.stage.addChild(loodee.container)
       agentsRef.current.push(loodee)
 
-      // CodeBot — Orc, walks on right side
+      // CodeBot
       const codebot = new SpriteAgent({
-        name: 'CodeBot',
-        spritePaths: {
-          Idle: orcIdle,
-          Walk: orcWalk,
-          Attack01: orcAttack01,
-          Death: orcDeath,
-          Hurt: orcHurt,
-        },
-        scale: 2.5,
+        name: 'Kobo',
+        spritePaths: charSprites,
+        scale: 4,
         animationSpeed: 0.1,
       })
       await codebot.load()
+      codebot.enableDrag(app, floorY)
       codebot.playAnim('Walk')
       const codebotStartX = app.screen.width * 0.55
       codebot.setPosition(codebotStartX, floorY)
       app.stage.addChild(codebot.container)
       agentsRef.current.push(codebot)
 
-      // ResearchBot — Orc
+      // ResearchBot
       const researchbot = new SpriteAgent({
-        name: 'ResearchBot',
-        spritePaths: {
-          Idle: orcIdle,
-          Walk: orcWalk,
-          Attack01: orcAttack01,
-          Death: orcDeath,
-          Hurt: orcHurt,
-        },
-        scale: 2.5,
+        name: 'Rebo',
+        spritePaths: charSprites,
+        scale: 4,
         animationSpeed: 0.09,
       })
       await researchbot.load()
+      researchbot.enableDrag(app, floorY)
       researchbot.playAnim('Walk')
       const researchbotStartX = app.screen.width * 0.70
       researchbot.setPosition(researchbotStartX, floorY)
       app.stage.addChild(researchbot.container)
       agentsRef.current.push(researchbot)
 
-      // CreativeBot — Orc
+      // CreativeBot
       const creativebot = new SpriteAgent({
-        name: 'CreativeBot',
-        spritePaths: {
-          Idle: orcIdle,
-          Walk: orcWalk,
-          Attack01: orcAttack01,
-          Death: orcDeath,
-          Hurt: orcHurt,
-        },
-        scale: 2.5,
+        name: 'Krebo',
+        spritePaths: charSprites,
+        scale: 4,
         animationSpeed: 0.11,
       })
       await creativebot.load()
+      creativebot.enableDrag(app, floorY)
       creativebot.playAnim('Walk')
       const creativebotStartX = app.screen.width * 0.85
       creativebot.setPosition(creativebotStartX, floorY)
@@ -261,24 +238,65 @@ export default function PixiApp({ className = '' }) {
         { agent: creativebot, x: creativebotStartX, dir: -1, speed: 0.7,  minX: app.screen.width * 0.78, maxX: app.screen.width * 0.93 },
       ]
 
-      app.ticker.add(() => {
-        // Loodee
-        posX += loodeeSpeed * loodeeDir
-        if (posX > loodeeMaxX || posX < loodeeMinX) {
-          loodeeDir *= -1
-          loodee.setFlip(loodeeDir < 0)
-        }
-        loodee.container.x = posX
+      const WALK_MARGIN = 20
+      const SCREEN_W = app.screen.width
 
-        // Other agents
-        for (const w of walkers) {
-          w.x += w.speed * w.dir
-          if (w.x > w.maxX || w.x < w.minX) {
-            w.dir *= -1
-            w.agent.setFlip(w.dir < 0)
-          }
-          w.agent.container.x = w.x
+      // Random target-based walk: each agent picks a random target X, walks to it, pauses, picks new target
+      function makeWalker(agent, startX, speed) {
+        const pickTarget = (fromX) => {
+          const range = SCREEN_W * (0.2 + Math.random() * 0.5) // walk 20-70% of screen
+          const dir = Math.random() < 0.5 ? 1 : -1
+          const target = Math.min(SCREEN_W - WALK_MARGIN, Math.max(WALK_MARGIN, fromX + dir * range))
+          return target
         }
+        return {
+          agent,
+          x: startX,
+          speed,
+          target: pickTarget(startX),
+          pauseFrames: 0,
+          pickTarget,
+        }
+      }
+
+      const walkerLoodee   = makeWalker(loodee,      loodeeStartX,      0.8)
+      const walkerCodebot  = makeWalker(codebot,     codebotStartX,     0.6)
+      const walkerResearch = makeWalker(researchbot, researchbotStartX, 0.5)
+      const walkerCreative = makeWalker(creativebot, creativebotStartX, 0.7)
+      const allWalkers = [walkerLoodee, walkerCodebot, walkerResearch, walkerCreative]
+
+      function tickWalker(w) {
+        if (w.agent.isDragging || w.agent._fallTicker) {
+          // Sync position after drag/fall, pick new target from drop point
+          w.x = w.agent.container.x
+          w.target = w.pickTarget(w.x)
+          w.pauseFrames = 0
+          return
+        }
+
+        if (w.pauseFrames > 0) {
+          if (!w.pausing) { w.pausing = true; w.agent.playAnim('Idle') }
+          w.pauseFrames--
+          return
+        }
+        if (w.pausing) { w.pausing = false; w.agent.playAnim('Walk') }
+
+        const dir = w.target > w.x ? 1 : -1
+        w.x += w.speed * dir
+        w.agent.setFlip(dir < 0)
+        w.agent.container.x = w.x
+
+        // Reached target
+        if (Math.abs(w.x - w.target) < w.speed + 1) {
+          w.x = w.target
+          w.agent.container.x = w.x
+          w.pauseFrames = Math.floor(60 + Math.random() * 180)
+          w.target = w.pickTarget(w.x)
+        }
+      }
+
+      app.ticker.add(() => {
+        for (const w of allWalkers) tickWalker(w)
       })
     }
 
