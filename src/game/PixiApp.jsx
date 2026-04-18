@@ -107,7 +107,7 @@ export default function PixiApp({ className = '' }) {
       // Snap mountain so bottom edge sits on top of grass row
       const groundTopY = app.screen.height - GROUND_ROWS * TILE_SIZE
       const mtH = mountainTexture.height * mtScale
-      mountainSprite.y = groundTopY - mtH + landscapeOffset
+      mountainSprite.y = groundTopY - mtH + 60 + landscapeOffset
       app.stage.addChild(mountainSprite)
 
       // Bushes — behind trees
