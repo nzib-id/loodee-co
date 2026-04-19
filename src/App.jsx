@@ -4,6 +4,7 @@ import AgentPanel from './ui/AgentPanel.jsx'
 import LogPanel from './ui/LogPanel.jsx'
 import WarRoomPanel from './ui/WarRoomPanel.jsx'
 import { initSocket } from './ws/socket.js'
+import { useAgentStore } from './store/agentStore.js'
 
 function LiveClock() {
   useEffect(() => {
@@ -26,33 +27,61 @@ function isMobileDevice() {
   return Math.min(window.screen.width, window.screen.height) < 768
 }
 
-function BottomSection() {
-  const [tab, setTab] = useState('log')
-  const tabs = [
-    { id: 'log', label: 'ACTIVITY LOG', color: '#ffe500' },
-    { id: 'warroom', label: 'WAR ROOM', color: '#f472b6' },
-  ]
+function WarRoomModal({ onClose }) {
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50"
+        style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div
+        className="fixed z-50 flex flex-col"
+        style={{
+          top: '10%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '80vw',
+          height: '80vh',
+          background: '#1a1a1a',
+          border: '2px solid rgba(244,114,182,0.4)',
+          boxShadow: '0 0 40px rgba(244,114,182,0.15), 4px 4px 0 rgba(0,0,0,0.8)',
+        }}
+      >
+        <WarRoomPanel onClose={onClose} />
+      </div>
+    </>
+  )
+}
+
+function BottomSection({ onOpenWarRoom }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            className="px-3 py-1.5 text-[9px] tracking-widest font-heading"
-            style={{
-              color: tab === t.id ? t.color : 'rgba(255,255,255,0.3)',
-              borderBottom: tab === t.id ? `2px solid ${t.color}` : '2px solid transparent',
-              background: 'transparent',
-              marginBottom: '-1px',
-            }}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
+        <span
+          className="px-3 py-1.5 text-[9px] tracking-widest font-heading"
+          style={{ color: '#ffe500', borderBottom: '2px solid #ffe500', marginBottom: '-1px' }}
+        >
+          ACTIVITY LOG
+        </span>
+        <button
+          className="px-3 py-1.5 text-[9px] tracking-widest font-heading"
+          style={{
+            color: 'rgba(244,114,182,0.7)',
+            borderBottom: '2px solid transparent',
+            background: 'transparent',
+            marginBottom: '-1px',
+            cursor: 'pointer',
+          }}
+          onClick={onOpenWarRoom}
+        >
+          ⚔ WAR ROOM
+        </button>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
-        {tab === 'log' ? <LogPanel /> : <WarRoomPanel />}
+        <LogPanel />
       </div>
     </div>
   )
@@ -61,6 +90,7 @@ function BottomSection() {
 export default function App() {
   const [mobile, setMobile] = useState(isMobileDevice)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [warRoomOpen, setWarRoomOpen] = useState(false)
   const [pixiKey, setPixiKey] = useState(0)
 
   useEffect(() => {
@@ -92,8 +122,11 @@ export default function App() {
         </div>
         <div className="flex flex-col w-80 min-h-0 overflow-hidden panel-divider" style={{ background: '#292929' }}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><AgentPanel /></div>
-          <div className="h-64 shrink-0 overflow-hidden log-divider"><BottomSection /></div>
+          <div className="h-64 shrink-0 overflow-hidden log-divider">
+            <BottomSection onOpenWarRoom={() => setWarRoomOpen(true)} />
+          </div>
         </div>
+        {warRoomOpen && <WarRoomModal onClose={() => setWarRoomOpen(false)} />}
       </div>
     )
   }
@@ -138,9 +171,10 @@ export default function App() {
       >
         <div className="flex-1 min-h-0 overflow-hidden"><AgentPanel /></div>
         <div className="h-40 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
-          <BottomSection />
+          <BottomSection onOpenWarRoom={() => setWarRoomOpen(true)} />
         </div>
       </div>
+      {warRoomOpen && <WarRoomModal onClose={() => setWarRoomOpen(false)} />}
     </div>
   )
 }

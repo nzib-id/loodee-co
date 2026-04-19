@@ -1,4 +1,4 @@
-// CodeBot was here 🤖
+// Loodee Co. HQ Server
 import express from 'express'
 import { createServer } from 'http'
 import { WebSocketServer } from 'ws'
@@ -36,12 +36,67 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', clients: clients.size, uptime: process.uptime() })
 })
 
-// Broadcast a chat message to all clients
+// In-memory message store for War Room DMs
+const messageStore = []
+
+// Chat + log history for replay on reconnect (max 200 entries)
+const chatHistory = []
+function broadcastAndStore(data) {
+  chatHistory.push(data)
+  if (chatHistory.length > 200) chatHistory.shift()
+  broadcast(data)
+}
+let messageIdCounter = 1
+
+const AGENT_COLORS = {
+  loodee: '#f472b6',
+  kobo: '#22d3ee',
+  rebo: '#a78bfa',
+  krebo: '#fb923c',
+  system: '#4ade80',
+}
+
+function agentColor(agentId) {
+  return AGENT_COLORS[agentId] ?? '#888'
+}
+
+// Broadcast a chat message to all clients, optionally store for a specific agent
 app.post('/api/message', (req, res) => {
-  const { agentId, agentName, msg, color } = req.body
+  const { agentId, agentName, msg, color, to } = req.body
   if (!agentId || !msg) return res.status(400).json({ error: 'agentId and msg required' })
-  broadcast({ type: 'chat', agentId, agentName: agentName ?? agentId, msg, color: color ?? '#888' })
-  console.log(`[chat] ${agentName ?? agentId}: ${msg}`)
+  const record = {
+    id: messageIdCounter++,
+    from: agentId,
+    to: to ?? null,
+    msg,
+    status: 'unread',
+    timestamp: Date.now(),
+  }
+  messageStore.push(record)
+  broadcastAndStore({ type: 'chat', agentId, agentName: agentName ?? agentId, msg, color: color ?? agentColor(agentId), to })
+  console.log(`[chat] ${agentName ?? agentId}${to ? ` → ${to}` : ''}: ${msg}`)
+  res.json({ ok: true, id: record.id })
+})
+
+// Debug: get ALL messages
+app.get('/api/messages/all', (req, res) => {
+  res.json({ messages: messageStore })
+})
+
+// Get unread messages for a specific agent
+app.get('/api/messages', (req, res) => {
+  const { for: forAgent } = req.query
+  if (!forAgent) return res.status(400).json({ error: 'for query param required' })
+  const unread = messageStore.filter(m => m.to === forAgent && m.status === 'unread')
+  res.json({ messages: unread })
+})
+
+// Mark a message as read
+app.post('/api/messages/:id/read', (req, res) => {
+  const id = parseInt(req.params.id, 10)
+  const msg = messageStore.find(m => m.id === id)
+  if (!msg) return res.status(404).json({ error: 'message not found' })
+  msg.status = 'read'
   res.json({ ok: true })
 })
 
@@ -79,6 +134,12 @@ wss.on('connection', (ws, req) => {
     }))
   }
 
+  // Replay last 50 chat + log messages so client gets history on connect
+  const history = chatHistory.slice(-50)
+  for (const entry of history) {
+    ws.send(JSON.stringify(entry))
+  }
+
   ws.on('close', () => {
     clients.delete(ws)
     console.log(`[ws] Client disconnected (total: ${clients.size})`)
@@ -92,10 +153,10 @@ wss.on('connection', (ws, req) => {
 
 // In-memory agent state (synced from OpenClaw)
 const agentState = new Map([
-  ['loodee',      { id: 'loodee',      status: 'active', load: 0 }],
-  ['codebot',     { id: 'codebot',     status: 'idle',   load: 0 }],
-  ['researchbot', { id: 'researchbot', status: 'idle',   load: 0 }],
-  ['creativebot', { id: 'creativebot', status: 'idle',   load: 0 }],
+  ['loodee', { id: 'loodee', status: 'active', load: 0 }],
+  ['kobo',   { id: 'kobo',   status: 'idle',   load: 0 }],
+  ['rebo',   { id: 'rebo',   status: 'idle',   load: 0 }],
+  ['krebo',  { id: 'krebo',  status: 'idle',   load: 0 }],
 ])
 
 // Task registry: agentId → { startedAt, ttlMs, label }
@@ -111,7 +172,7 @@ app.post('/api/task-start', (req, res) => {
   taskRegistry.set(agentId, { startedAt: Date.now(), ttlMs, label })
   agentState.set(agentId, { id: agentId, status: 'active', load: 75 })
   broadcast({ type: 'agent_status', agentId, status: 'active', load: 75 })
-  broadcast({ type: 'log', agentId, agentName: agentId, msg: `Task started: ${label}`, color: '#4ade80' })
+  broadcastAndStore({ type: 'log', agentId, agentName: agentId, msg: `Task started: ${label}`, color: '#4ade80' })
   console.log(`[task] ${agentId} started: ${label}`)
   res.json({ ok: true })
 })
@@ -124,7 +185,7 @@ app.post('/api/task-done', (req, res) => {
   taskRegistry.delete(agentId)
   agentState.set(agentId, { id: agentId, status: 'idle', load: 0 })
   broadcast({ type: 'agent_status', agentId, status: 'idle', load: 0 })
-  broadcast({ type: 'log', agentId, agentName: agentId, msg: `✓ ${label}`, color: '#ffe500' })
+  broadcastAndStore({ type: 'log', agentId, agentName: agentId, msg: `✓ ${label}`, color: '#ffe500' })
   console.log(`[task] ${agentId} done: ${label}`)
   res.json({ ok: true })
 })
@@ -137,7 +198,7 @@ setInterval(() => {
       taskRegistry.delete(agentId)
       agentState.set(agentId, { id: agentId, status: 'idle', load: 0 })
       broadcast({ type: 'agent_status', agentId, status: 'idle', load: 0 })
-      broadcast({ type: 'log', agentId, agentName: agentId, msg: `Task expired (TTL exceeded)`, color: '#888' })
+      broadcastAndStore({ type: 'log', agentId, agentName: agentId, msg: `Task expired (TTL exceeded)`, color: '#888' })
       console.log(`[task] ${agentId} expired`)
     }
   }
@@ -185,14 +246,14 @@ function pollOpenClaw() {
     const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
 
-    // CodeBot: active if task registry says so, else idle
-    const codebotTask = taskRegistry.get('codebot')
-    const codebotActive = !!codebotTask
-    const codebotLoad = codebotActive ? Math.min(95, Math.round(55 + ((Date.now() - codebotTask.startedAt) / 60000) * 2)) : 0
-    broadcast({ type: 'agent_status', agentId: 'codebot', status: codebotActive ? 'active' : 'idle', load: codebotActive ? codebotLoad : 0 })
+    // Kobo: active if task registry says so, else idle
+    const koboTask = taskRegistry.get('kobo')
+    const koboActive = !!koboTask
+    const koboLoad = koboActive ? Math.min(95, Math.round(55 + ((Date.now() - koboTask.startedAt) / 60000) * 2)) : 0
+    broadcast({ type: 'agent_status', agentId: 'kobo', status: koboActive ? 'active' : 'idle', load: koboActive ? koboLoad : 0 })
 
-    // ResearchBot & CreativeBot: task registry first, fallback to session data
-    for (const id of ['researchbot', 'creativebot']) {
+    // Rebo & Krebo: task registry first, fallback to session data
+    for (const id of ['rebo', 'krebo']) {
       const task = taskRegistry.get(id)
       if (task) {
         const load = Math.min(95, Math.round(55 + ((now - task.startedAt) / 60000) * 2))
@@ -213,9 +274,9 @@ function pollOpenClaw() {
 function mapSessionToAgent(sessionKey) {
   // agent:main:telegram:direct:1927609058 → loodee (main session)
   if (sessionKey.startsWith('agent:main')) return 'loodee'
-  if (sessionKey.includes('code')) return 'codebot'
-  if (sessionKey.includes('research')) return 'researchbot'
-  if (sessionKey.includes('creative')) return 'creativebot'
+  if (sessionKey.includes('kobo')) return 'kobo'
+  if (sessionKey.includes('research') || sessionKey.includes('rebo')) return 'rebo'
+  if (sessionKey.includes('creative') || sessionKey.includes('krebo')) return 'krebo'
   return null
 }
 
