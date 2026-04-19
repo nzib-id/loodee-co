@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import PixiApp from './game/PixiApp.jsx'
 import AgentPanel from './ui/AgentPanel.jsx'
 import LogPanel from './ui/LogPanel.jsx'
-import WarRoomPanel from './ui/WarRoomPanel.jsx'
+import MeetRoomPanel from './ui/MeetRoomPanel.jsx'
 import { initSocket } from './ws/socket.js'
 import { useAgentStore } from './store/agentStore.js'
 
@@ -27,7 +27,7 @@ function isMobileDevice() {
   return Math.min(window.screen.width, window.screen.height) < 768
 }
 
-function WarRoomModal({ onClose }) {
+function MeetRoomModal({ onClose }) {
   return (
     <>
       {/* Backdrop */}
@@ -50,13 +50,13 @@ function WarRoomModal({ onClose }) {
           boxShadow: '0 0 40px rgba(244,114,182,0.15), 4px 4px 0 rgba(0,0,0,0.8)',
         }}
       >
-        <WarRoomPanel onClose={onClose} />
+        <MeetRoomPanel onClose={onClose} />
       </div>
     </>
   )
 }
 
-function BottomSection({ onOpenWarRoom }) {
+function BottomSection({ onOpenMeetRoom }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -75,9 +75,9 @@ function BottomSection({ onOpenWarRoom }) {
             marginBottom: '-1px',
             cursor: 'pointer',
           }}
-          onClick={onOpenWarRoom}
+          onClick={onOpenMeetRoom}
         >
-          ⚔ WAR ROOM
+          ⚔ MEET ROOM
         </button>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
@@ -90,7 +90,7 @@ function BottomSection({ onOpenWarRoom }) {
 export default function App() {
   const [mobile, setMobile] = useState(isMobileDevice)
   const [panelOpen, setPanelOpen] = useState(false)
-  const [warRoomOpen, setWarRoomOpen] = useState(false)
+  const [meetRoomOpen, setWarRoomOpen] = useState(false)
   const [pixiKey, setPixiKey] = useState(0)
 
   useEffect(() => {
@@ -123,10 +123,10 @@ export default function App() {
         <div className="flex flex-col w-80 min-h-0 overflow-hidden panel-divider" style={{ background: '#292929' }}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><AgentPanel /></div>
           <div className="h-64 shrink-0 overflow-hidden log-divider">
-            <BottomSection onOpenWarRoom={() => setWarRoomOpen(true)} />
+            <BottomSection onOpenMeetRoom={() => setWarRoomOpen(true)} />
           </div>
         </div>
-        {warRoomOpen && <WarRoomModal onClose={() => setWarRoomOpen(false)} />}
+        {meetRoomOpen && <MeetRoomModal onClose={() => setWarRoomOpen(false)} />}
       </div>
     )
   }
@@ -171,10 +171,10 @@ export default function App() {
       >
         <div className="flex-1 min-h-0 overflow-hidden"><AgentPanel /></div>
         <div className="h-40 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
-          <BottomSection onOpenWarRoom={() => setWarRoomOpen(true)} />
+          <BottomSection onOpenMeetRoom={() => setWarRoomOpen(true)} />
         </div>
       </div>
-      {warRoomOpen && <WarRoomModal onClose={() => setWarRoomOpen(false)} />}
+      {meetRoomOpen && <MeetRoomModal onClose={() => setWarRoomOpen(false)} />}
     </div>
   )
 }

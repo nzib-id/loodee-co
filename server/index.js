@@ -36,7 +36,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', clients: clients.size, uptime: process.uptime() })
 })
 
-// In-memory message store for War Room DMs
+// In-memory message store for Meet Room DMs
 const messageStore = []
 
 // Chat + log history for replay on reconnect (max 200 entries)
