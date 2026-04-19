@@ -36,6 +36,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', clients: clients.size, uptime: process.uptime() })
 })
 
+// Broadcast a chat message to all clients
+app.post('/api/message', (req, res) => {
+  const { agentId, agentName, msg, color } = req.body
+  if (!agentId || !msg) return res.status(400).json({ error: 'agentId and msg required' })
+  broadcast({ type: 'chat', agentId, agentName: agentName ?? agentId, msg, color: color ?? '#888' })
+  console.log(`[chat] ${agentName ?? agentId}: ${msg}`)
+  res.json({ ok: true })
+})
+
 // Set agent status manually (used by orchestrator)
 app.post('/api/agent-status', (req, res) => {
   const { agentId, status, load } = req.body

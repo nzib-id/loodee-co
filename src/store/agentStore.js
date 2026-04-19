@@ -48,6 +48,7 @@ const initialLogs = []
 export const useAgentStore = create((set) => ({
   agents: initialAgents,
   logs: initialLogs,
+  chatMessages: [],
   selectedAgent: 'loodee',
   wsConnected: false,
 
@@ -64,6 +65,14 @@ export const useAgentStore = create((set) => ({
         { id: Date.now(), time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }), ...entry },
         ...state.logs,
       ].slice(0, 200),
+    })),
+
+  addChatMessage: (entry) =>
+    set((state) => ({
+      chatMessages: [
+        ...state.chatMessages,
+        { id: Date.now() + Math.random(), time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }), ...entry },
+      ].slice(-200),
     })),
 
   setWsConnected: (connected) => set({ wsConnected: connected }),

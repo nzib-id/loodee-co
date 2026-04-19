@@ -44,7 +44,7 @@ function connect() {
 }
 
 function handleMessage(msg) {
-  const { updateAgent, addLog } = useAgentStore.getState()
+  const { updateAgent, addLog, addChatMessage } = useAgentStore.getState()
 
   switch (msg.type) {
     case 'agent_status':
@@ -55,6 +55,15 @@ function handleMessage(msg) {
 
     case 'log':
       addLog({
+        agent: msg.agentId ?? 'system',
+        agentName: msg.agentName ?? 'System',
+        msg: msg.msg,
+        color: msg.color ?? '#888',
+      })
+      break
+
+    case 'chat':
+      addChatMessage({
         agent: msg.agentId ?? 'system',
         agentName: msg.agentName ?? 'System',
         msg: msg.msg,

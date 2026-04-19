@@ -37,19 +37,6 @@ export default function LogPanel() {
       className="flex flex-col h-full log-divider"
       style={{ background: '#292929' }}
     >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-2 shrink-0"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
-      >
-        <span className="text-[10px] tracking-widest font-heading" style={{ color: '#ffe500' }}>
-          ACTIVITY LOG
-        </span>
-        <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          {logs.length} entries
-        </span>
-      </div>
-
       {/* Scrollable log list */}
       <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse">
         <div ref={bottomRef} />

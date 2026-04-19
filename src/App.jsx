@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import PixiApp from './game/PixiApp.jsx'
 import AgentPanel from './ui/AgentPanel.jsx'
 import LogPanel from './ui/LogPanel.jsx'
+import WarRoomPanel from './ui/WarRoomPanel.jsx'
 import { initSocket } from './ws/socket.js'
 
 function LiveClock() {
@@ -23,6 +24,38 @@ function LiveClock() {
 function isMobileDevice() {
   // Use smallest screen dimension — doesn't change on rotate
   return Math.min(window.screen.width, window.screen.height) < 768
+}
+
+function BottomSection() {
+  const [tab, setTab] = useState('log')
+  const tabs = [
+    { id: 'log', label: 'ACTIVITY LOG', color: '#ffe500' },
+    { id: 'warroom', label: 'WAR ROOM', color: '#f472b6' },
+  ]
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            className="px-3 py-1.5 text-[9px] tracking-widest font-heading"
+            style={{
+              color: tab === t.id ? t.color : 'rgba(255,255,255,0.3)',
+              borderBottom: tab === t.id ? `2px solid ${t.color}` : '2px solid transparent',
+              background: 'transparent',
+              marginBottom: '-1px',
+            }}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {tab === 'log' ? <LogPanel /> : <WarRoomPanel />}
+      </div>
+    </div>
+  )
 }
 
 export default function App() {
@@ -59,7 +92,7 @@ export default function App() {
         </div>
         <div className="flex flex-col w-80 min-h-0 overflow-hidden panel-divider" style={{ background: '#292929' }}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><AgentPanel /></div>
-          <div className="h-64 shrink-0 overflow-hidden log-divider"><LogPanel /></div>
+          <div className="h-64 shrink-0 overflow-hidden log-divider"><BottomSection /></div>
         </div>
       </div>
     )
@@ -104,8 +137,8 @@ export default function App() {
         }}
       >
         <div className="flex-1 min-h-0 overflow-hidden"><AgentPanel /></div>
-        <div className="h-28 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
-          <LogPanel />
+        <div className="h-40 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
+          <BottomSection />
         </div>
       </div>
     </div>
