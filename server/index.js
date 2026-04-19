@@ -49,7 +49,7 @@ function broadcastAndStore(data) {
 let messageIdCounter = 1
 
 const AGENT_COLORS = {
-  loodee: '#f472b6',
+  loodee: '#ffe500',
   kobo: '#22d3ee',
   rebo: '#a78bfa',
   krebo: '#fb923c',
