@@ -12,7 +12,7 @@ const initialAgents = [
     sprite: 'soldier',
   },
   {
-    id: 'codebot',
+    id: 'kobo',
     name: 'Kobo',
     role: 'Engineering',
     model: 'claude-sonnet-4-6',
@@ -22,7 +22,7 @@ const initialAgents = [
     sprite: 'orc',
   },
   {
-    id: 'researchbot',
+    id: 'rebo',
     name: 'Rebo',
     role: 'Intelligence',
     model: 'qwen2.5:7b',
@@ -32,7 +32,7 @@ const initialAgents = [
     sprite: null,
   },
   {
-    id: 'creativebot',
+    id: 'krebo',
     name: 'Krebo',
     role: 'Creative',
     model: 'claude-sonnet-4-6',
