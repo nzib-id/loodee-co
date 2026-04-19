@@ -39,7 +39,7 @@ export default function MeetRoomPanel({ onClose }) {
         style={{ borderBottom: '2px solid rgba(244,114,182,0.3)' }}
       >
         <span className="text-xs tracking-widest font-heading" style={{ color: '#f472b6' }}>
-          ⚔️ MEET ROOM
+          MEET ROOM
         </span>
         <div className="flex items-center gap-3">
           <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>

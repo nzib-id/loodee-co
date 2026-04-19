@@ -8,7 +8,10 @@ import { homedir } from 'os'
 import path from 'path'
 
 const PORT = 3001
-const SESSIONS_FILE = path.join(homedir(), '.openclaw/agents/main/sessions/sessions.json')
+const SESSIONS_FILES = [
+  path.join(homedir(), '.openclaw/agents/main/sessions/sessions.json'),
+  path.join(homedir(), '.openclaw/agents/kobo/sessions/sessions.json'),
+]
 const POLL_INTERVAL = 5000 // poll sessions file every 5s
 
 const app = express()
@@ -89,6 +92,24 @@ app.get('/api/messages', (req, res) => {
   if (!forAgent) return res.status(400).json({ error: 'for query param required' })
   const unread = messageStore.filter(m => m.to === forAgent && m.status === 'unread')
   res.json({ messages: unread })
+})
+
+// Log a message between agents
+app.post('/api/messages', (req, res) => {
+  const { from, to, content, type } = req.body
+  if (!from || !to || !content) return res.status(400).json({ error: 'from, to, and content required' })
+  const record = {
+    id: messageIdCounter++,
+    from,
+    to,
+    msg: content,
+    type: type ?? 'message',
+    status: 'unread',
+    timestamp: Date.now(),
+  }
+  messageStore.push(record)
+  broadcast({ type: 'chat', agentId: from, agentName: from, msg: content, color: agentColor(from), to })
+  res.json({ ok: true, id: String(record.id) })
 })
 
 // Mark a message as read
@@ -207,8 +228,14 @@ setInterval(() => {
 // Read OpenClaw sessions.json and derive agent states
 function pollOpenClaw() {
   try {
-    const raw = readFileSync(SESSIONS_FILE, 'utf8')
-    const sessions = JSON.parse(raw)
+    const allSessions = {}
+    for (const file of SESSIONS_FILES) {
+      try {
+        const raw = readFileSync(file, 'utf8')
+        Object.assign(allSessions, JSON.parse(raw))
+      } catch (_) {}
+    }
+    const sessions = allSessions
     const now = Date.now()
     const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000 // active if updated within 10 minutes
 
@@ -246,11 +273,17 @@ function pollOpenClaw() {
     const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
     broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
 
-    // Kobo: active if task registry says so, else idle
+    // Kobo: task registry first, fallback to session data
     const koboTask = taskRegistry.get('kobo')
-    const koboActive = !!koboTask
-    const koboLoad = koboActive ? Math.min(95, Math.round(55 + ((Date.now() - koboTask.startedAt) / 60000) * 2)) : 0
-    broadcast({ type: 'agent_status', agentId: 'kobo', status: koboActive ? 'active' : 'idle', load: koboActive ? koboLoad : 0 })
+    if (koboTask) {
+      const koboLoad = Math.min(95, Math.round(55 + ((now - koboTask.startedAt) / 60000) * 2))
+      broadcast({ type: 'agent_status', agentId: 'kobo', status: 'active', load: koboLoad })
+    } else {
+      const koboUpdated = latestUpdated.get('kobo') ?? 0
+      const koboMsSince = now - koboUpdated
+      const koboActive = koboUpdated > 0 && koboMsSince < ACTIVE_THRESHOLD_MS
+      broadcast({ type: 'agent_status', agentId: 'kobo', status: koboActive ? 'active' : 'idle', load: koboActive ? Math.round(60 - (koboMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0 })
+    }
 
     // Rebo & Krebo: task registry first, fallback to session data
     for (const id of ['rebo', 'krebo']) {
@@ -298,7 +331,7 @@ setInterval(() => {
 httpServer.on('listening', () => {
   console.log(`🏠 Loodee Co. backend running on ws://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/health`)
-  console.log(`   Sessions file: ${SESSIONS_FILE}`)
+  console.log(`   Sessions files: ${SESSIONS_FILES.join(', ')}`)
 })
 
 // Never crash on EADDRINUSE — just keep retrying every 2s
