@@ -90,7 +90,7 @@ function BottomSection({ onOpenMeetRoom }) {
 export default function App() {
   const [mobile, setMobile] = useState(isMobileDevice)
   const [panelOpen, setPanelOpen] = useState(false)
-  const [meetRoomOpen, setWarRoomOpen] = useState(false)
+  const [meetRoomOpen, setMeetRoomOpen] = useState(false)
   const [pixiKey, setPixiKey] = useState(0)
 
   useEffect(() => {
@@ -123,10 +123,10 @@ export default function App() {
         <div className="flex flex-col w-80 min-h-0 overflow-hidden panel-divider" style={{ background: '#292929' }}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><AgentPanel /></div>
           <div className="h-64 shrink-0 overflow-hidden log-divider">
-            <BottomSection onOpenMeetRoom={() => setWarRoomOpen(true)} />
+            <BottomSection onOpenMeetRoom={() => setMeetRoomOpen(true)} />
           </div>
         </div>
-        {meetRoomOpen && <MeetRoomModal onClose={() => setWarRoomOpen(false)} />}
+        {meetRoomOpen && <MeetRoomModal onClose={() => setMeetRoomOpen(false)} />}
       </div>
     )
   }
@@ -171,10 +171,10 @@ export default function App() {
       >
         <div className="flex-1 min-h-0 overflow-hidden"><AgentPanel /></div>
         <div className="h-40 shrink-0 overflow-hidden" style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
-          <BottomSection onOpenMeetRoom={() => setWarRoomOpen(true)} />
+          <BottomSection onOpenMeetRoom={() => setMeetRoomOpen(true)} />
         </div>
       </div>
-      {meetRoomOpen && <MeetRoomModal onClose={() => setWarRoomOpen(false)} />}
+      {meetRoomOpen && <MeetRoomModal onClose={() => setMeetRoomOpen(false)} />}
     </div>
   )
 }

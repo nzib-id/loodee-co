@@ -13,7 +13,7 @@
 3. [Struktur Folder](#struktur-folder)
 4. [Server API Reference](#server-api-reference)
 5. [Frontend Architecture](#frontend-architecture)
-6. [War Room](#war-room)
+6. [Meet Room](#meet-room)
 7. [Deploy Guide](#deploy-guide)
 8. [Known Issues & Pending Tasks](#known-issues--pending-tasks)
 
@@ -21,7 +21,7 @@
 
 ## 🏠 Project Overview
 
-Loodee Co. Dashboard adalah tampilan real-time bergaya idle game yang menampilkan aktivitas semua agent. Berfungsi sebagai **visual HQ** sekaligus **War Room** untuk komunikasi antar agent.
+Loodee Co. Dashboard adalah tampilan real-time bergaya idle game yang menampilkan aktivitas semua agent. Berfungsi sebagai **visual HQ** sekaligus **Meet Room** untuk komunikasi antar agent.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -33,14 +33,14 @@ Loodee Co. Dashboard adalah tampilan real-time bergaya idle game yang menampilka
 │   │                  │   ├──────────────────────┤  │
 │   │  Sprite: Soldier │   │  ACTIVITY LOG        │  │
 │   │  (Loodee), Orc   │   │  ──────────          │  │
-│   │  (Kobo), dll     │   │  WAR ROOM            │  │
+│   │  (Kobo), dll     │   │  MEET ROOM           │  │
 │   └──────────────────┘   └──────────────────────┘  │
 └─────────────────────────────────────────────────────┘
                ↕ WebSocket (ws://localhost:3001)
 ┌─────────────────────────────────────────────────────┐
 │              Backend (Node.js + Express)             │
 │  - Agent status tracking + polling OpenClaw          │
-│  - War Room messaging store                          │
+│  - Meet Room messaging store                         │
 │  - WebSocket broadcast ke semua client               │
 └─────────────────────────────────────────────────────┘
 ```
@@ -92,7 +92,7 @@ loodee-co/
 │   ├── ui/
 │   │   ├── AgentPanel.jsx  # Panel kanan — list agent + status
 │   │   ├── LogPanel.jsx    # Activity Log tab
-│   │   └── WarRoomPanel.jsx # War Room chat tab
+│   │   └── MeetRoomPanel.jsx # Meet Room chat tab
 │   └── ws/
 │       └── socket.js       # WebSocket client (connect, reconnect, handle events)
 ├── public/assets/          # Static assets (sprites, tiles, fonts)
@@ -105,7 +105,7 @@ loodee-co/
 
 Base URL: `http://localhost:3001`
 
-### War Room — Messaging
+### Meet Room — Messaging
 
 #### Kirim Pesan
 ```
@@ -165,7 +165,7 @@ GET /health
 |------|---------|-----------|
 | `agent_status` | `{ agentId, status, load }` | Update status agent di UI |
 | `log` | `{ agentId, agentName, msg, color }` | Entry di Activity Log |
-| `chat` | `{ agentId, agentName, msg, color, to }` | Pesan di War Room |
+| `chat` | `{ agentId, agentName, msg, color, to }` | Pesan di Meet Room |
 | `agent_update` | `{ agentId, patch }` | Patch data agent |
 
 > Saat client baru connect, server otomatis replay **50 pesan terakhir** (chat + log).
@@ -180,7 +180,7 @@ GET /health
 |-------|------|-----------|
 | `agents[]` | Array | Data semua agent (id, name, role, status, load, color, sprite) |
 | `logs[]` | Array | Activity Log entries (max 200, newest first) |
-| `chatMessages[]` | Array | War Room messages (max 200, oldest first) |
+| `chatMessages[]` | Array | Meet Room messages (max 200, oldest first) |
 | `selectedAgent` | string | Agent yang dipilih di UI |
 | `wsConnected` | boolean | Status koneksi WebSocket |
 
@@ -202,9 +202,9 @@ GET /health
 
 ---
 
-## 💬 War Room
+## 💬 Meet Room
 
-War Room adalah chat panel untuk komunikasi real-time antar agent. Tampil di tab **WAR ROOM** (toggle dari ACTIVITY LOG) di bagian bawah dashboard.
+Meet Room adalah chat panel untuk komunikasi real-time antar agent. Tampil di tab **MEET ROOM** (toggle dari ACTIVITY LOG) di bagian bawah dashboard.
 
 ### Warna Resmi Per Agent
 
@@ -236,12 +236,12 @@ curl "http://localhost:3001/api/messages?for=codebot"
 # Kobo mulai task
 curl -X POST http://localhost:3001/api/task-start \
   -H "Content-Type: application/json" \
-  -d '{"agentId": "codebot", "label": "Fix auto-color War Room"}'
+  -d '{"agentId": "codebot", "label": "Fix auto-color Meet Room"}'
 
 # Kobo report selesai
 curl -X POST http://localhost:3001/api/task-done \
   -H "Content-Type: application/json" \
-  -d '{"agentId": "codebot", "label": "Auto-color War Room fixed"}'
+  -d '{"agentId": "codebot", "label": "Auto-color Meet Room fixed"}'
 
 # Kobo balas ke Loodee
 curl -X POST http://localhost:3001/api/message \
@@ -296,15 +296,15 @@ git push
 ## 🐛 Known Issues & Pending Tasks
 
 ### 🔴 High Priority
-- [ ] **Auto-color War Room** — `POST /api/message` default ke `#888` kalau `color` tidak di-pass. Server harus auto-map `agentId` → warna. Fix di `server/index.js` line ~64.
+- [ ] **Auto-color Meet Room** — `POST /api/message` default ke `#888` kalau `color` tidak di-pass. Server harus auto-map `agentId` → warna. Fix di `server/index.js` line ~64.
 
 ### 🟡 Medium Priority
 - [ ] **agentId naming mismatch** — `agentState` di server (`codebot`, `researchbot`, `creativebot`) dan frontend (`agentStore.js`) perlu diupdate ke `kobo`, `rebo`, `krebo`.
-- [ ] **Kobo auto-poll War Room** — Kobo perlu poll `GET /api/messages?for=codebot` secara periodik (via heartbeat atau cron) biar bisa auto-baca pesan dari Loodee tanpa trigger manual.
+- [ ] **Kobo auto-poll Meet Room** — Kobo perlu poll `GET /api/messages?for=codebot` secara periodik (via heartbeat atau cron) biar bisa auto-baca pesan dari Loodee tanpa trigger manual.
 
 ### 🟢 Low Priority
 - [ ] Sprite untuk Rebo dan Krebo belum dibuat
-- [ ] Mobile layout War Room panel agak sempit
+- [ ] Mobile layout Meet Room panel agak sempit
 
 ---
 
