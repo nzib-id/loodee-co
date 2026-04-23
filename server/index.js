@@ -3,11 +3,18 @@ import express from 'express'
 import { createServer } from 'http'
 import { WebSocketServer } from 'ws'
 import cors from 'cors'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { homedir } from 'os'
 import path from 'path'
 
+const GALLERY_DIR = path.join(homedir(), '.openclaw/workspace/projects/nano-banana-gen/gallery')
+const GALLERY_META = path.join(GALLERY_DIR, 'metadata.json')
+
+// Ensure gallery dir exists
+mkdirSync(GALLERY_DIR, { recursive: true })
+
 const PORT = 3001
+const WS_SECRET_TOKEN = process.env.WS_SECRET_TOKEN
 const SESSIONS_FILES = [
   path.join(homedir(), '.openclaw/agents/main/sessions/sessions.json'),
   path.join(homedir(), '.openclaw/agents/kobo/sessions/sessions.json'),
@@ -16,7 +23,7 @@ const POLL_INTERVAL = 5000 // poll sessions file every 5s
 
 const app = express()
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '20mb' }))
 
 const httpServer = createServer(app)
 const wss = new WebSocketServer({ server: httpServer })
@@ -33,6 +40,53 @@ function broadcast(data) {
     }
   }
 }
+
+// Gallery: save image to filesystem
+app.post('/api/gallery/save', (req, res) => {
+  const { imageData, mime, prompt, model, aspectRatio } = req.body
+  if (!imageData) return res.status(400).json({ error: 'imageData required' })
+  try {
+    const timestamp = Date.now()
+    const filename = `nanobanan-${timestamp}.png`
+    const filepath = path.join(GALLERY_DIR, filename)
+    // Save image file
+    const buffer = Buffer.from(imageData, 'base64')
+    writeFileSync(filepath, buffer)
+    // Update metadata
+    let metadata = []
+    if (existsSync(GALLERY_META)) {
+      try { metadata = JSON.parse(readFileSync(GALLERY_META, 'utf8')) } catch (_) {}
+    }
+    metadata.unshift({ filename, prompt: prompt ?? '', model: model ?? '', aspectRatio: aspectRatio ?? '', timestamp })
+    writeFileSync(GALLERY_META, JSON.stringify(metadata, null, 2))
+    console.log(`[gallery] Saved ${filename}`)
+    res.json({ ok: true, filename })
+  } catch (err) {
+    console.error('[gallery] Save error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Gallery: list all images
+app.get('/api/gallery', (req, res) => {
+  try {
+    let images = []
+    if (existsSync(GALLERY_META)) {
+      images = JSON.parse(readFileSync(GALLERY_META, 'utf8'))
+    }
+    res.json({ images })
+  } catch (err) {
+    res.json({ images: [] })
+  }
+})
+
+// Gallery: serve image file
+app.get('/api/gallery/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename)
+  const filepath = path.join(GALLERY_DIR, filename)
+  if (!existsSync(filepath)) return res.status(404).json({ error: 'not found' })
+  res.sendFile(filepath)
+})
 
 // Health check
 app.get('/health', (req, res) => {
@@ -133,6 +187,15 @@ app.post('/api/agent-status', (req, res) => {
 
 // WebSocket connection handler
 wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://localhost:${PORT}`)
+  const token = url.searchParams.get('token')
+
+  if (!WS_SECRET_TOKEN || token !== WS_SECRET_TOKEN) {
+    ws.close(4401, 'Unauthorized')
+    console.warn(`[ws] Rejected connection — invalid token (ip: ${req.socket.remoteAddress})`)
+    return
+  }
+
   clients.add(ws)
   console.log(`[ws] Client connected (total: ${clients.size})`)
 
@@ -235,68 +298,58 @@ function pollOpenClaw() {
         Object.assign(allSessions, JSON.parse(raw))
       } catch (_) {}
     }
-    const sessions = allSessions
     const now = Date.now()
-    const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000 // active if updated within 10 minutes
+    const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000 // fallback for sessions without status field
 
-    // Aggregate: per agent, take the most recent updatedAt across all matching sessions
-    const latestUpdated = new Map()
-    for (const [key, session] of Object.entries(sessions)) {
+    // Aggregate per agent: track whether any session is running, plus most recent updatedAt
+    // Sessions with explicit status field use that as authoritative signal.
+    // Sessions without status field fall back to updatedAt freshness (backward compat).
+    const agentInfo = new Map() // agentId → { running: bool, lastUpdated: ms }
+    for (const [key, session] of Object.entries(allSessions)) {
       const id = mapSessionToAgent(key)
       if (!id) continue
-      const updated = session.updatedAt ?? 0
-      if (!latestUpdated.has(id) || updated > latestUpdated.get(id)) {
-        latestUpdated.set(id, updated)
+      const prev = agentInfo.get(id) ?? { running: false, lastUpdated: 0 }
+      const updatedAt = session.updatedAt ?? 0
+      let isRunning
+      if (session.status != null) {
+        isRunning = session.status === 'running'
+      } else {
+        // Legacy format: no status field — treat as running if recently updated
+        isRunning = updatedAt > 0 && (now - updatedAt) < ACTIVE_THRESHOLD_MS
       }
+      agentInfo.set(id, {
+        running: prev.running || isRunning,
+        lastUpdated: Math.max(prev.lastUpdated, updatedAt),
+      })
     }
 
-    let changed = false
-    for (const [id, updatedAt] of latestUpdated.entries()) {
-      const msSinceUpdate = now - updatedAt
-      const isActive = msSinceUpdate < ACTIVE_THRESHOLD_MS
-      const newStatus = isActive ? 'active' : 'idle'
-      const newLoad = isActive ? Math.round(60 - (msSinceUpdate / ACTIVE_THRESHOLD_MS) * 60) : 0
-
-      const current = agentState.get(id)
-      if (current && current.status !== newStatus) {
-        agentState.set(id, { ...current, status: newStatus, load: newLoad })
-        broadcast({ type: 'agent_status', agentId: id, status: newStatus, load: newLoad })
-        changed = true
-        console.log(`[poll] ${id}: ${newStatus} (${Math.round(msSinceUpdate / 1000)}s ago)`)
-      }
+    function deriveLoad(running, lastUpdated) {
+      if (!running) return 0
+      const msSince = now - lastUpdated
+      // Fresher updates = higher load, decays over 10 min, floor 20
+      return Math.min(90, Math.max(20, 60 - Math.round(msSince / 10000)))
     }
 
     // Always broadcast ALL agent statuses every poll so frontend stays in sync
-    const loodeeUpdated = latestUpdated.get('loodee') ?? 0
-    const loodeeMsSince = now - loodeeUpdated
-    const loodeeActive = loodeeMsSince < ACTIVE_THRESHOLD_MS
-    const loodeeLoad = loodeeActive ? Math.round(60 - (loodeeMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0
-    broadcast({ type: 'agent_status', agentId: 'loodee', status: loodeeActive ? 'active' : 'idle', load: loodeeLoad })
-
-    // Kobo: task registry first, fallback to session data
-    const koboTask = taskRegistry.get('kobo')
-    if (koboTask) {
-      const koboLoad = Math.min(95, Math.round(55 + ((now - koboTask.startedAt) / 60000) * 2))
-      broadcast({ type: 'agent_status', agentId: 'kobo', status: 'active', load: koboLoad })
-    } else {
-      const koboUpdated = latestUpdated.get('kobo') ?? 0
-      const koboMsSince = now - koboUpdated
-      const koboActive = koboUpdated > 0 && koboMsSince < ACTIVE_THRESHOLD_MS
-      broadcast({ type: 'agent_status', agentId: 'kobo', status: koboActive ? 'active' : 'idle', load: koboActive ? Math.round(60 - (koboMsSince / ACTIVE_THRESHOLD_MS) * 60) : 0 })
-    }
-
-    // Rebo & Krebo: task registry first, fallback to session data
-    for (const id of ['rebo', 'krebo']) {
+    for (const id of ['loodee', 'kobo', 'rebo', 'krebo']) {
+      // taskRegistry override: explicit signal from orchestrator takes priority
       const task = taskRegistry.get(id)
       if (task) {
         const load = Math.min(95, Math.round(55 + ((now - task.startedAt) / 60000) * 2))
         broadcast({ type: 'agent_status', agentId: id, status: 'active', load })
-      } else {
-        const updated = latestUpdated.get(id) ?? 0
-        const msSince = now - updated
-        const isActive = updated > 0 && msSince < ACTIVE_THRESHOLD_MS
-        broadcast({ type: 'agent_status', agentId: id, status: isActive ? 'active' : 'idle', load: isActive ? Math.round(60 - (msSince / ACTIVE_THRESHOLD_MS) * 60) : 0 })
+        continue
       }
+
+      const info = agentInfo.get(id) ?? { running: false, lastUpdated: 0 }
+      const newStatus = info.running ? 'active' : 'idle'
+      const newLoad = deriveLoad(info.running, info.lastUpdated)
+
+      const current = agentState.get(id)
+      if (current && current.status !== newStatus) {
+        agentState.set(id, { ...current, status: newStatus, load: newLoad })
+        console.log(`[poll] ${id}: ${current.status} → ${newStatus}`)
+      }
+      broadcast({ type: 'agent_status', agentId: id, status: newStatus, load: newLoad })
     }
 
   } catch (err) {
