@@ -301,26 +301,39 @@ function pollOpenClaw() {
     const now = Date.now()
     const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000 // fallback for sessions without status field
 
-    // Aggregate per agent: track whether any session is running, plus most recent updatedAt
+    // Aggregate per agent: track running/failed state and most recent updatedAt.
     // Sessions with explicit status field use that as authoritative signal.
     // Sessions without status field fall back to updatedAt freshness (backward compat).
-    const agentInfo = new Map() // agentId → { running: bool, lastUpdated: ms }
+    const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000 // 24h → offline
+    const agentInfo = new Map() // agentId → { running, failed, lastUpdated, hasSession }
     for (const [key, session] of Object.entries(allSessions)) {
       const id = mapSessionToAgent(key)
       if (!id) continue
-      const prev = agentInfo.get(id) ?? { running: false, lastUpdated: 0 }
+      const prev = agentInfo.get(id) ?? { running: false, failed: false, lastUpdated: 0, hasSession: false }
       const updatedAt = session.updatedAt ?? 0
-      let isRunning
+      let isRunning = false
+      let isFailed = false
       if (session.status != null) {
         isRunning = session.status === 'running'
+        isFailed = session.status === 'failed'
       } else {
         // Legacy format: no status field — treat as running if recently updated
         isRunning = updatedAt > 0 && (now - updatedAt) < ACTIVE_THRESHOLD_MS
       }
       agentInfo.set(id, {
         running: prev.running || isRunning,
+        failed: prev.failed || isFailed,
         lastUpdated: Math.max(prev.lastUpdated, updatedAt),
+        hasSession: true,
       })
+    }
+
+    function deriveStatus(info) {
+      if (!info.hasSession) return 'offline'
+      if (info.running) return 'active'
+      if (info.failed) return 'offline'
+      if (info.lastUpdated > 0 && (now - info.lastUpdated) > STALE_THRESHOLD_MS) return 'offline'
+      return 'idle'
     }
 
     function deriveLoad(running, lastUpdated) {
@@ -340,8 +353,8 @@ function pollOpenClaw() {
         continue
       }
 
-      const info = agentInfo.get(id) ?? { running: false, lastUpdated: 0 }
-      const newStatus = info.running ? 'active' : 'idle'
+      const info = agentInfo.get(id) ?? { running: false, failed: false, lastUpdated: 0, hasSession: false }
+      const newStatus = deriveStatus(info)
       const newLoad = deriveLoad(info.running, info.lastUpdated)
 
       const current = agentState.get(id)
