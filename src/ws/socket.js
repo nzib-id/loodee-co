@@ -1,8 +1,8 @@
 import { useAgentStore } from '../store/agentStore.js'
 
-const WS_URL = import.meta.env.PROD
-  ? 'wss://api.loodee.art'
-  : 'ws://localhost:3001'
+const WS_TOKEN = import.meta.env.VITE_WS_TOKEN ?? ''
+const WS_BASE = import.meta.env.PROD ? 'wss://api.loodee.art' : 'ws://localhost:3001'
+const WS_URL = WS_TOKEN ? `${WS_BASE}?token=${WS_TOKEN}` : WS_BASE
 const RECONNECT_DELAY = 3000
 
 let ws = null
